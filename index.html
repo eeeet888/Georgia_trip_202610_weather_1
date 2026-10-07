@@ -94,6 +94,14 @@
     .dot.error { background: var(--warn); }
     @keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
 
+    /* 圖例 + 扣分說明合併區 */
+    .info-panel {
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
     .legend-bar {
       display: flex;
       justify-content: center;
@@ -101,11 +109,7 @@
       flex-wrap: wrap;
       font-size: 0.75em;
       color: var(--muted);
-      margin-bottom: 14px;
-      padding: 10px 12px;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      margin-bottom: 8px;
     }
     .legend-bar span {
       display: inline-flex;
@@ -116,6 +120,29 @@
       width: 14px; height: 14px; border-radius: 4px;
       display: inline-block;
       border: 1px solid rgba(0,0,0,.08);
+    }
+
+    /* 扣分因素說明行 */
+    .deduct-line {
+      text-align: center;
+      font-size: 0.74em;
+      color: var(--muted);
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      line-height: 1.7;
+    }
+    .deduct-line b {
+      color: #546e7a;
+      font-weight: 600;
+    }
+    .deduct-line .d {
+      display: inline-block;
+      margin: 0 3px;
+      white-space: nowrap;
+    }
+    .deduct-line .d.good {
+      color: #2e7d32;
+      font-weight: 600;
     }
 
     .table-wrapper {
@@ -275,7 +302,8 @@
       h1 { font-size: 1.15em; }
       th, td { padding: 7px 4px; }
       .slot { width: 22px; height: 22px; font-size: 0.68em; }
-      .legend-bar { font-size: 0.7em; gap: 7px; padding: 8px; }
+      .legend-bar { font-size: 0.7em; gap: 7px; }
+      .deduct-line { font-size: 0.7em; }
     }
   </style>
 </head>
@@ -289,7 +317,7 @@
   </div>
 
   <h1>行程戶外活動適宜度</h1>
-  <p class="subtitle">格魯吉亞 &amp; 杜拜 · 綜合降雨、溫度、風速判斷 · 開啟頁面時自動載入最新資料</p>
+  <p class="subtitle">格魯吉亞 &amp; 杜拜 · 綜合降雨、風速判斷 · 開啟頁面時自動載入最新資料</p>
 
   <div class="toolbar">
     <button id="refreshBtn" type="button">
@@ -301,14 +329,28 @@
     </span>
   </div>
 
-  <div class="legend-bar">
-    <span><i style="background:#a5d6a7;"></i>極佳 90+</span>
-    <span><i style="background:#c8e6c9;"></i>適合 75+</span>
-    <span><i style="background:#dcedc8;"></i>尚可 60+</span>
-    <span><i style="background:#fff8e1;"></i>普通 45+</span>
-    <span><i style="background:#ffe0b2;"></i>不佳 30+</span>
-    <span><i style="background:#ffcdd2;"></i>不宜 &lt;30</span>
-    <span>⭐ 行程目的地</span>
+  <!-- 圖例 + 扣分說明 -->
+  <div class="info-panel">
+    <div class="legend-bar">
+      <span><i style="background:#a5d6a7;"></i>極佳 90+</span>
+      <span><i style="background:#c8e6c9;"></i>適合 75+</span>
+      <span><i style="background:#dcedc8;"></i>尚可 60+</span>
+      <span><i style="background:#fff8e1;"></i>普通 45+</span>
+      <span><i style="background:#ffe0b2;"></i>不佳 30+</span>
+      <span><i style="background:#ffcdd2;"></i>不宜 &lt;30</span>
+      <span>⭐ 行程目的地</span>
+    </div>
+    <div class="deduct-line">
+      <b>扣分因素</b>：
+      <span class="d">⛈️ 雷暴 -75</span>
+      <span class="d">❄️ 陰天降雪 -50～60</span>
+      <span class="d">🌧️ 降雨 -45～55</span>
+      <span class="d">🌦️ 陣雨 -35～55</span>
+      <span class="d">💧 雨量 &gt;8mm -25</span>
+      <span class="d">☔ 高機率 &gt;85% -18</span>
+      <span class="d">💨 強風 &gt;55km/h -25</span>
+      <span class="d good">🌤️ 藍天降雪、過冷過熱皆不扣分</span>
+    </div>
   </div>
 
   <div class="table-wrapper">
@@ -333,7 +375,7 @@
 
   <footer>
     資料來源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
-    時段：早 06–12、午 12–18、晚 18–24 · 滑鼠移到色塊可看詳細原因<br>
+    時段：早 06–12、午 12–18、晚 18–24 · 滑鼠移到色塊可看該時段的具體扣分原因<br>
     超過 16 天：優先顯示「長期預報」，若無資料則以「估計」顯示過去三年同日平均值
   </footer>
 </div>
@@ -387,6 +429,9 @@ const TIME_SLOTS = [
   { id: 'evening',   label: '晚', start: 18, end: 24 }
 ];
 
+// 藍天降雪的雲量門檻（低於此值視為有藍天）
+const CLEAR_SKY_CLOUD_THRESHOLD = 60;
+
 const historicalCache = {};
 const seasonalCache = {};
 
@@ -409,6 +454,16 @@ function getLevel(score) {
   return LEVELS[LEVELS.length - 1];
 }
 
+// 判斷是否為降雪代碼
+function isSnowCode(c) {
+  return typeof c === 'number' && ((c >= 71 && c <= 77) || (c >= 85 && c <= 86));
+}
+
+/**
+ * 綜合評估單一小時的戶外適宜度（0–100 分）
+ * ★ 溫度不扣分
+ * ★ 藍天降雪（雲量 < 60%）不扣分
+ */
 function scoreOutdoor(hourData) {
   let score = 100;
   const reasons = [];
@@ -416,52 +471,70 @@ function scoreOutdoor(hourData) {
   const code = hourData.weather_code;
   const precip = hourData.precipitation || 0;
   const prob = hourData.precipitation_probability;
-  const temp = hourData.temperature_2m;
+  const cloud = hourData.cloud_cover;
   const wind = hourData.wind_speed_10m;
 
+  // 是否為藍天降雪
+  const isSnowy = isSnowCode(code);
+  const isClearSkySnow = isSnowy && typeof cloud === 'number' && cloud < CLEAR_SKY_CLOUD_THRESHOLD;
+
+  // ---- 天氣代碼 ----
   if (typeof code === 'number') {
-    if (code >= 96) { score -= 85; reasons.push('雷暴冰雹'); }
-    else if (code === 95) { score -= 75; reasons.push('雷暴'); }
-    else if (code >= 85 && code <= 86) { score -= 60; reasons.push('強陣雪'); }
-    else if (code >= 75 && code <= 77) { score -= 60; reasons.push('大雪'); }
-    else if (code >= 71 && code <= 73) { score -= 50; reasons.push('降雪'); }
-    else if (code >= 65 && code <= 67) { score -= 55; reasons.push('凍雨'); }
-    else if (code >= 63 && code <= 64) { score -= 50; reasons.push('中雨'); }
-    else if (code === 61 || code === 62) { score -= 45; reasons.push('降雨'); }
-    else if (code === 80) { score -= 35; reasons.push('小陣雨'); }
-    else if (code === 81) { score -= 45; reasons.push('陣雨'); }
-    else if (code === 82) { score -= 55; reasons.push('強陣雨'); }
-    else if (code >= 51 && code <= 55) { score -= 25; reasons.push('毛毛雨'); }
-    else if (code === 45 || code === 48) { score -= 20; reasons.push('有霧'); }
-    else if (code === 3) { score -= 8; reasons.push('陰天'); }
-    else if (code === 2) { score -= 3; }
+    if (code >= 96) {
+      score -= 85; reasons.push('雷暴冰雹');
+    } else if (code === 95) {
+      score -= 75; reasons.push('雷暴');
+    } else if (isSnowy) {
+      if (isClearSkySnow) {
+        // ★ 藍天降雪：不扣分
+        reasons.push('藍天降雪');
+      } else {
+        if (code >= 85) { score -= 60; reasons.push('強陣雪'); }
+        else if (code >= 75) { score -= 60; reasons.push('大雪'); }
+        else { score -= 50; reasons.push('降雪'); }
+      }
+    } else if (code >= 65 && code <= 67) {
+      score -= 55; reasons.push('凍雨');
+    } else if (code >= 63 && code <= 64) {
+      score -= 50; reasons.push('中雨');
+    } else if (code === 61 || code === 62) {
+      score -= 45; reasons.push('降雨');
+    } else if (code === 80) {
+      score -= 35; reasons.push('小陣雨');
+    } else if (code === 81) {
+      score -= 45; reasons.push('陣雨');
+    } else if (code === 82) {
+      score -= 55; reasons.push('強陣雨');
+    } else if (code >= 51 && code <= 55) {
+      score -= 25; reasons.push('毛毛雨');
+    } else if (code === 45 || code === 48) {
+      score -= 20; reasons.push('有霧');
+    } else if (code === 3) {
+      score -= 8; reasons.push('陰天');
+    } else if (code === 2) {
+      score -= 3;
+    }
   }
 
-  if (precip > 8) { score -= 25; reasons.push('大雨量'); }
-  else if (precip > 4) { score -= 18; }
-  else if (precip > 2) { score -= 12; }
-  else if (precip > 0.5) { score -= 6; }
+  // ---- 降水量（藍天降雪不扣） ----
+  if (!isClearSkySnow) {
+    if (precip > 8) { score -= 25; reasons.push('大雨量'); }
+    else if (precip > 4) { score -= 18; }
+    else if (precip > 2) { score -= 12; }
+    else if (precip > 0.5) { score -= 6; }
+  }
 
-  if (typeof prob === 'number') {
+  // ---- 降雨機率（藍天降雪不扣） ----
+  if (!isClearSkySnow && typeof prob === 'number') {
     if (prob >= 85) { score -= 18; reasons.push('極高降雨機率'); }
     else if (prob >= 70) { score -= 12; reasons.push('高降雨機率'); }
     else if (prob >= 55) { score -= 7; }
     else if (prob >= 40) { score -= 3; }
   }
 
-  if (typeof temp === 'number') {
-    if (temp < -15) { score -= 55; reasons.push('極寒'); }
-    else if (temp < -8) { score -= 45; reasons.push('嚴寒'); }
-    else if (temp < -2) { score -= 32; reasons.push('寒冷'); }
-    else if (temp < 3) { score -= 18; reasons.push('偏冷'); }
-    else if (temp < 8) { score -= 6; }
-    else if (temp > 42) { score -= 55; reasons.push('極端酷熱'); }
-    else if (temp > 38) { score -= 42; reasons.push('酷熱'); }
-    else if (temp > 34) { score -= 28; reasons.push('炎熱'); }
-    else if (temp > 30) { score -= 14; reasons.push('偏熱'); }
-    else if (temp > 26) { score -= 5; }
-  }
+  // ★ 溫度：不扣分（已移除）
 
+  // ---- 風速 ----
   if (typeof wind === 'number') {
     if (wind > 70) { score -= 35; reasons.push('暴風'); }
     else if (wind > 55) { score -= 25; reasons.push('強風'); }
@@ -472,6 +545,9 @@ function scoreOutdoor(hourData) {
   return { score: Math.max(0, Math.min(100, score)), reasons };
 }
 
+/**
+ * 分析某日各時段適宜度
+ */
 function analyzeDaySlots(hourly, dateStr, hasProb) {
   if (!hourly || !Array.isArray(hourly.time)) return null;
 
@@ -498,6 +574,7 @@ function analyzeDaySlots(hourly, dateStr, hasProb) {
         precipitation: hourly.precipitation?.[i],
         precipitation_probability: hourly.precipitation_probability?.[i],
         weather_code: hourly.weather_code?.[i],
+        cloud_cover: hourly.cloud_cover?.[i],
         wind_speed_10m: hourly.wind_speed_10m?.[i]
       };
       if (hourData.weather_code !== undefined || hourData.temperature_2m !== undefined) {
@@ -667,7 +744,7 @@ async function fetchHistoricalAverage(loc, dateStr) {
         + `?latitude=${loc.lat}&longitude=${loc.lon}`
         + `&start_date=${pastDate}&end_date=${pastDate}`
         + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset`
-        + `&hourly=temperature_2m,precipitation,weather_code,wind_speed_10m`
+        + `&hourly=temperature_2m,precipitation,weather_code,cloud_cover,wind_speed_10m`
         + `&timezone=auto`;
       const data = await fetchJSON(url, 1);
       if (data.daily && data.daily.time && data.daily.time.length > 0) {
@@ -720,7 +797,7 @@ async function fetchHistoricalAverage(loc, dateStr) {
 }
 
 /* =========================================================
-   7. 抓取資料（僅在頁面開啟或手動點擊時執行）
+   7. 抓取資料
    ========================================================= */
 let isFetching = false;
 
@@ -730,7 +807,6 @@ async function fetchAllWeather() {
   setLoading(true);
   setStatus('正在載入最新資料…', 'loading');
 
-  // 手動重載時清空快取，確保取得最新資料
   Object.keys(historicalCache).forEach(k => delete historicalCache[k]);
   Object.keys(seasonalCache).forEach(k => delete seasonalCache[k]);
 
@@ -740,7 +816,7 @@ async function fetchAllWeather() {
         const url = 'https://api.open-meteo.com/v1/forecast'
           + `?latitude=${loc.lat}&longitude=${loc.lon}`
           + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset'
-          + '&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m'
+          + '&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,cloud_cover,wind_speed_10m'
           + '&timezone=auto'
           + `&forecast_days=${FORECAST_DAYS}`;
         return fetchJSON(url).then(data => ({
@@ -885,8 +961,7 @@ function renderTable(weatherData, seasonalData) {
 
           const { score } = scoreOutdoor({
             weather_code: code,
-            precipitation: precip,
-            temperature_2m: (maxT + minT) / 2
+            precipitation: precip
           });
           const level = getLevel(score);
 
@@ -956,10 +1031,7 @@ function renderTable(weatherData, seasonalData) {
 /* =========================================================
    9. 啟動
    ========================================================= */
-// 只在頁面載入時執行一次
 fetchAllWeather();
-
-// 手動重新載入按鈕
 btn.addEventListener('click', fetchAllWeather);
 </script>
 
