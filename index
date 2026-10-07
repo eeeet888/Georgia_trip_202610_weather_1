@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>行程戶外活動適宜度 · 格魯吉亞 & 杜拜</title>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --primary-dark: #1a252f;
+      --bg: #f5f7f9;
+      --card-bg: #ffffff;
+      --border: #e9ecef;
+      --text: #333;
+      --muted: #6c757d;
+      --warn: #d9534f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .top-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 0.85em;
+      color: var(--muted);
+    }
+    .top-info strong { color: var(--primary); }
+
+    h1 {
+      text-align: center;
+      color: var(--primary);
+      margin: 0 0 6px;
+      font-size: 1.45em;
+      letter-spacing: 0.3px;
+    }
+    p.subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.86em;
+      margin-bottom: 20px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    #refreshBtn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 0.88em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #refreshBtn:hover:not(:disabled) { background: var(--primary-dark); }
+    #refreshBtn:active:not(:disabled) { transform: scale(.97); }
+    #refreshBtn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .status {
+      font-size: 0.82em;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status.error { color: var(--warn); font-weight: 600; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #2ecc71; display: inline-block;
+    }
+    .dot.loading { background: #f0ad4e; animation: pulse 1s infinite alternate; }
+    .dot.error { background: var(--warn); }
+    @keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
+
+    .legend-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.75em;
+      color: var(--muted);
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .legend-bar span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-bar i {
+      width: 14px; height: 14px; border-radius: 4px;
+      display: inline-block;
+      border: 1px solid rgba(0,0,0,.08);
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      background: var(--card-bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+      font-size: 0.88em;
+    }
+    th, td {
+      padding: 9px 6px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      vertical-align: middle;
+      position: relative;
+    }
+    th:last-child, td:last-child { border-right: none; }
+    tr:last-child td { border-bottom: none; }
+    th {
+      background-color: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      line-height: 1.3;
+      font-size: 0.92em;
+      padding: 10px 6px;
+    }
+    tr:hover td { background-color: #fafbfc; }
+
+    tr.today td { background-color: #fffdf5; }
+    tr.today td.date-col { box-shadow: inset 3px 0 0 var(--warn); }
+
+    td.plan-cell { background-color: #f1f8e9 !important; }
+    tr.today td.plan-cell { background-color: #e8f5e9 !important; }
+
+    .plan-star {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      font-size: 0.85em;
+      line-height: 1;
+      z-index: 3;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.9;
+    }
+
+    .date-col {
+      font-weight: 600;
+      white-space: nowrap;
+      background-color: #fff;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      border-right: 2px solid var(--border);
+      min-width: 72px;
+    }
+    th.date-col { z-index: 3; background-color: var(--primary); }
+    tr.today .date-col { background-color: #fffdf5; }
+    .dow { font-size: 0.74em; font-weight: normal; color: var(--muted); margin-top: 1px; }
+    tr.today .dow { color: var(--warn); font-weight: 600; }
+
+    .cell-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      line-height: 1.3;
+    }
+    .wicon { font-size: 1.5em; line-height: 1; }
+    .temp {
+      font-weight: 600;
+      color: #37474f;
+      white-space: nowrap;
+      font-size: 0.95em;
+    }
+
+    .slots {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 2px;
+    }
+    .slot {
+      font-size: 0.72em;
+      font-weight: 700;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      line-height: 1;
+      cursor: default;
+      transition: transform .15s;
+      border: 1px solid transparent;
+    }
+    .slot:hover { transform: scale(1.15); }
+
+    /* ===== 6 級適宜度色系 ===== */
+    .lv-excellent { background: #a5d6a7; color: #1b5e20; border-color: #81c784; }
+    .lv-great     { background: #c8e6c9; color: #2e7d32; border-color: #a5d6a7; }
+    .lv-good      { background: #dcedc8; color: #558b2f; border-color: #c5e1a5; }
+    .lv-fair      { background: #fff8e1; color: #f57f17; border-color: #ffe082; }
+    .lv-poor      { background: #ffe0b2; color: #e65100; border-color: #ffcc80; }
+    .lv-bad       { background: #ffcdd2; color: #b71c1c; border-color: #ef9a9a; }
+
+    .sun {
+      font-size: 0.68em;
+      color: #90a4ae;
+      white-space: nowrap;
+      margin-top: 2px;
+      letter-spacing: 0.2px;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.62em;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+    .tag-seasonal { background: #e8eaf6; color: #3949ab; }
+    .tag-estimate { background: #fbe9e7; color: #bf360c; }
+
+    .pending {
+      color: #adb5bd;
+      font-style: italic;
+      font-size: 0.8em;
+    }
+    .pending small { display: block; font-style: normal; font-size: .9em; margin-top: 2px; }
+
+    footer {
+      text-align: center;
+      font-size: 0.76em;
+      color: #adb5bd;
+      margin-top: 18px;
+      line-height: 1.8;
+    }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 600px) {
+      body { padding: 12px 8px; }
+      h1 { font-size: 1.15em; }
+      th, td { padding: 7px 4px; }
+      .slot { width: 22px; height: 22px; font-size: 0.68em; }
+      .legend-bar { font-size: 0.7em; gap: 7px; padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="top-info">
+    <div>🕒 資料時間：<strong id="lastUpdated">載入中…</strong></div>
+    <div>📍 9 個地點 · 12 天行程</div>
+  </div>
+
+  <h1>行程戶外活動適宜度</h1>
+  <p class="subtitle">格魯吉亞 &amp; 杜拜 · 綜合降雨、溫度、風速判斷 · 開啟頁面時自動載入最新資料</p>
+
+  <div class="toolbar">
+    <button id="refreshBtn" type="button">
+      <span id="btnIcon">🔄</span><span id="btnText">重新載入</span>
+    </button>
+    <span id="status" class="status">
+      <span class="dot loading" id="statusDot"></span>
+      <span id="statusText">正在載入天氣資料…</span>
+    </span>
+  </div>
+
+  <div class="legend-bar">
+    <span><i style="background:#a5d6a7;"></i>極佳 90+</span>
+    <span><i style="background:#c8e6c9;"></i>適合 75+</span>
+    <span><i style="background:#dcedc8;"></i>尚可 60+</span>
+    <span><i style="background:#fff8e1;"></i>普通 45+</span>
+    <span><i style="background:#ffe0b2;"></i>不佳 30+</span>
+    <span><i style="background:#ffcdd2;"></i>不宜 &lt;30</span>
+    <span>⭐ 行程目的地</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="weatherTable">
+      <thead>
+        <tr>
+          <th class="date-col">日期</th>
+          <th>第比利斯<br>(Tbilisi)</th>
+          <th>卡克赫提<br>(Sighnaghi)</th>
+          <th>卡茲別克<br>(Kazbegi)</th>
+          <th>朱塔山谷<br>(Juta)</th>
+          <th>庫塔伊西<br>(Kutaisi)</th>
+          <th>梅斯蒂亞<br>(Mestia)</th>
+          <th>烏樹故里<br>(Ushguli)</th>
+          <th>祖格迪迪<br>(Zugdidi)</th>
+          <th>杜拜<br>(Dubai)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <footer>
+    資料來源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+    時段：早 06–12、午 12–18、晚 18–24 · 滑鼠移到色塊可看詳細原因<br>
+    超過 16 天：優先顯示「長期預報」，若無資料則以「估計」顯示過去三年同日平均值
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   1. 設定區
+   ========================================================= */
+const locations = [
+  { id: 'tbilisi',  name: '第比利斯', lat: 41.7151, lon: 44.8271 },
+  { id: 'sighnaghi',name: '卡克赫提', lat: 41.6200, lon: 45.9219 },
+  { id: 'kazbegi',  name: '卡茲別克', lat: 42.6567, lon: 44.6433 },
+  { id: 'juta',     name: '朱塔山谷', lat: 42.5786, lon: 44.7483 },
+  { id: 'kutaisi',  name: '庫塔伊西', lat: 42.2662, lon: 42.7180 },
+  { id: 'mestia',   name: '梅斯蒂亞', lat: 43.0458, lon: 42.7278 },
+  { id: 'ushguli',  name: '烏樹故里', lat: 42.9168, lon: 43.0157 },
+  { id: 'zugdidi',  name: '祖格迪迪', lat: 42.5088, lon: 41.8709 },
+  { id: 'dubai',    name: '杜拜',     lat: 25.2048, lon: 55.2708 }
+];
+
+const tripDates = [
+  "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19",
+  "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23",
+  "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27"
+];
+
+/* =========================================================
+   ★★★ 行程計劃表 ★★★
+   ========================================================= */
+const itinerary = {
+  '2026-10-16': ['tbilisi'],
+  '2026-10-17': ['tbilisi'],
+  '2026-10-18': ['sighnaghi'],
+  '2026-10-19': ['kazbegi'],
+  '2026-10-20': ['juta'],
+  '2026-10-21': ['kutaisi'],
+  '2026-10-22': ['mestia'],
+  '2026-10-23': ['ushguli'],
+  '2026-10-24': ['zugdidi'],
+  '2026-10-25': ['dubai'],
+  '2026-10-26': ['dubai'],
+  '2026-10-27': ['dubai']
+};
+
+const FORECAST_DAYS = 16;
+const SEASONAL_DAYS = 46;
+
+const TIME_SLOTS = [
+  { id: 'morning',   label: '早', start: 6,  end: 12 },
+  { id: 'afternoon', label: '午', start: 12, end: 18 },
+  { id: 'evening',   label: '晚', start: 18, end: 24 }
+];
+
+const historicalCache = {};
+const seasonalCache = {};
+
+/* =========================================================
+   2. 六級適宜度評分系統
+   ========================================================= */
+const LEVELS = [
+  { min: 90, key: 'excellent', cls: 'lv-excellent', label: '極佳' },
+  { min: 75, key: 'great',     cls: 'lv-great',     label: '適合' },
+  { min: 60, key: 'good',      cls: 'lv-good',      label: '尚可' },
+  { min: 45, key: 'fair',      cls: 'lv-fair',      label: '普通' },
+  { min: 30, key: 'poor',      cls: 'lv-poor',      label: '不佳' },
+  { min: 0,  key: 'bad',       cls: 'lv-bad',       label: '不宜' }
+];
+
+function getLevel(score) {
+  for (const lv of LEVELS) {
+    if (score >= lv.min) return lv;
+  }
+  return LEVELS[LEVELS.length - 1];
+}
+
+function scoreOutdoor(hourData) {
+  let score = 100;
+  const reasons = [];
+
+  const code = hourData.weather_code;
+  const precip = hourData.precipitation || 0;
+  const prob = hourData.precipitation_probability;
+  const temp = hourData.temperature_2m;
+  const wind = hourData.wind_speed_10m;
+
+  if (typeof code === 'number') {
+    if (code >= 96) { score -= 85; reasons.push('雷暴冰雹'); }
+    else if (code === 95) { score -= 75; reasons.push('雷暴'); }
+    else if (code >= 85 && code <= 86) { score -= 60; reasons.push('強陣雪'); }
+    else if (code >= 75 && code <= 77) { score -= 60; reasons.push('大雪'); }
+    else if (code >= 71 && code <= 73) { score -= 50; reasons.push('降雪'); }
+    else if (code >= 65 && code <= 67) { score -= 55; reasons.push('凍雨'); }
+    else if (code >= 63 && code <= 64) { score -= 50; reasons.push('中雨'); }
+    else if (code === 61 || code === 62) { score -= 45; reasons.push('降雨'); }
+    else if (code === 80) { score -= 35; reasons.push('小陣雨'); }
+    else if (code === 81) { score -= 45; reasons.push('陣雨'); }
+    else if (code === 82) { score -= 55; reasons.push('強陣雨'); }
+    else if (code >= 51 && code <= 55) { score -= 25; reasons.push('毛毛雨'); }
+    else if (code === 45 || code === 48) { score -= 20; reasons.push('有霧'); }
+    else if (code === 3) { score -= 8; reasons.push('陰天'); }
+    else if (code === 2) { score -= 3; }
+  }
+
+  if (precip > 8) { score -= 25; reasons.push('大雨量'); }
+  else if (precip > 4) { score -= 18; }
+  else if (precip > 2) { score -= 12; }
+  else if (precip > 0.5) { score -= 6; }
+
+  if (typeof prob === 'number') {
+    if (prob >= 85) { score -= 18; reasons.push('極高降雨機率'); }
+    else if (prob >= 70) { score -= 12; reasons.push('高降雨機率'); }
+    else if (prob >= 55) { score -= 7; }
+    else if (prob >= 40) { score -= 3; }
+  }
+
+  if (typeof temp === 'number') {
+    if (temp < -15) { score -= 55; reasons.push('極寒'); }
+    else if (temp < -8) { score -= 45; reasons.push('嚴寒'); }
+    else if (temp < -2) { score -= 32; reasons.push('寒冷'); }
+    else if (temp < 3) { score -= 18; reasons.push('偏冷'); }
+    else if (temp < 8) { score -= 6; }
+    else if (temp > 42) { score -= 55; reasons.push('極端酷熱'); }
+    else if (temp > 38) { score -= 42; reasons.push('酷熱'); }
+    else if (temp > 34) { score -= 28; reasons.push('炎熱'); }
+    else if (temp > 30) { score -= 14; reasons.push('偏熱'); }
+    else if (temp > 26) { score -= 5; }
+  }
+
+  if (typeof wind === 'number') {
+    if (wind > 70) { score -= 35; reasons.push('暴風'); }
+    else if (wind > 55) { score -= 25; reasons.push('強風'); }
+    else if (wind > 42) { score -= 15; reasons.push('大風'); }
+    else if (wind > 30) { score -= 6; }
+  }
+
+  return { score: Math.max(0, Math.min(100, score)), reasons };
+}
+
+function analyzeDaySlots(hourly, dateStr, hasProb) {
+  if (!hourly || !Array.isArray(hourly.time)) return null;
+
+  return TIME_SLOTS.map(slot => {
+    const indices = [];
+    hourly.time.forEach((t, i) => {
+      if (t && t.startsWith(dateStr)) {
+        const hour = parseInt(t.slice(11, 13), 10);
+        if (hour >= slot.start && hour < slot.end) indices.push(i);
+      }
+    });
+
+    if (indices.length === 0) {
+      return { ...slot, score: 80, level: getLevel(80), reasons: [] };
+    }
+
+    let totalScore = 0;
+    const reasonSet = new Set();
+    let hasAnyData = false;
+
+    indices.forEach(i => {
+      const hourData = {
+        temperature_2m: hourly.temperature_2m?.[i],
+        precipitation: hourly.precipitation?.[i],
+        precipitation_probability: hourly.precipitation_probability?.[i],
+        weather_code: hourly.weather_code?.[i],
+        wind_speed_10m: hourly.wind_speed_10m?.[i]
+      };
+      if (hourData.weather_code !== undefined || hourData.temperature_2m !== undefined) {
+        hasAnyData = true;
+        const { score, reasons } = scoreOutdoor(hourData);
+        totalScore += score;
+        reasons.forEach(r => reasonSet.add(r));
+      }
+    });
+
+    if (!hasAnyData) {
+      return { ...slot, score: 80, level: getLevel(80), reasons: [] };
+    }
+
+    const avgScore = Math.round(totalScore / indices.length);
+    return {
+      ...slot,
+      score: avgScore,
+      level: getLevel(avgScore),
+      reasons: Array.from(reasonSet)
+    };
+  });
+}
+
+/* =========================================================
+   3. 工具函式
+   ========================================================= */
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+
+function getWeatherIcon(code) {
+  if (code === 0) return "☀️";
+  if (code === 1) return "🌤️";
+  if (code === 2) return "⛅";
+  if (code === 3) return "☁️";
+  if (code === 45 || code === 48) return "🌫️";
+  if (code >= 51 && code <= 55) return "🌦️";
+  if (code >= 56 && code <= 57) return "🌧️";
+  if (code >= 61 && code <= 65) return "🌧️";
+  if (code >= 66 && code <= 67) return "🌧️";
+  if (code >= 71 && code <= 77) return "❄️";
+  if (code >= 80 && code <= 82) return "🌦️";
+  if (code >= 85 && code <= 86) return "🌨️";
+  if (code === 95) return "⛈️";
+  if (code >= 96) return "⛈️";
+  return "☁️";
+}
+
+function getWeatherText(code) {
+  if (code === 0) return "晴朗";
+  if (code === 1) return "大致晴朗";
+  if (code === 2) return "多雲";
+  if (code === 3) return "陰天";
+  if (code === 45 || code === 48) return "有霧";
+  if (code >= 51 && code <= 55) return "毛毛雨";
+  if (code >= 56 && code <= 57) return "凍雨";
+  if (code >= 61 && code <= 65) return "有雨";
+  if (code >= 66 && code <= 67) return "凍雨";
+  if (code >= 71 && code <= 77) return "降雪";
+  if (code >= 80 && code <= 82) return "陣雨";
+  if (code >= 85 && code <= 86) return "陣雪";
+  if (code === 95) return "雷雨";
+  if (code >= 96) return "雷暴冰雹";
+  return "未知";
+}
+
+function todayStr() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function fullDateTimeLabel() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function formatTime(isoStr) {
+  if (!isoStr || typeof isoStr !== 'string') return '—';
+  const parts = isoStr.split('T');
+  if (parts.length < 2) return '—';
+  return parts[1].slice(0, 5);
+}
+
+async function fetchJSON(url, retries = 2) {
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+      if (i < retries) await new Promise(r => setTimeout(r, 700 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+function isPlanFor(dateStr, locId) {
+  const plans = itinerary[dateStr];
+  return Array.isArray(plans) && plans.includes(locId);
+}
+
+/* =========================================================
+   4. 狀態列 / 按鈕
+   ========================================================= */
+const btn           = document.getElementById('refreshBtn');
+const btnIcon       = document.getElementById('btnIcon');
+const btnText       = document.getElementById('btnText');
+const statusDot     = document.getElementById('statusDot');
+const statusTxt     = document.getElementById('statusText');
+const lastUpdatedEl = document.getElementById('lastUpdated');
+
+function setStatus(text, state) {
+  statusTxt.textContent = text;
+  statusDot.className = 'dot' + (state === 'loading' ? ' loading' : state === 'error' ? ' error' : '');
+}
+
+function setLoading(on) {
+  btn.disabled = on;
+  btnIcon.textContent = on ? '⏳' : '🔄';
+  btnText.textContent = on ? '載入中…' : '重新載入';
+}
+
+/* =========================================================
+   5. 季節（長期）預報
+   ========================================================= */
+async function fetchSeasonalForecast(loc) {
+  const cacheKey = `${loc.id}_seasonal`;
+  if (seasonalCache[cacheKey]) return seasonalCache[cacheKey];
+
+  try {
+    const url = `https://seasonal-api.open-meteo.com/v1/seasonal`
+      + `?latitude=${loc.lat}&longitude=${loc.lon}`
+      + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum`
+      + `&timezone=auto`
+      + `&forecast_days=${SEASONAL_DAYS}`
+      + `&models=ecmwf_ec46`;
+    const data = await fetchJSON(url, 1);
+    if (data.daily && Array.isArray(data.daily.time)) {
+      seasonalCache[cacheKey] = data.daily;
+      return data.daily;
+    }
+  } catch (err) {
+    console.warn(`查詢 ${loc.name} 長期預報失敗`, err);
+  }
+  return null;
+}
+
+/* =========================================================
+   6. 歷史平均值（過去三年同日）
+   ========================================================= */
+async function fetchHistoricalAverage(loc, dateStr) {
+  const cacheKey = `${loc.id}_${dateStr}`;
+  if (historicalCache[cacheKey]) return historicalCache[cacheKey];
+
+  const targetYear = parseInt(dateStr.slice(0, 4), 10);
+  const monthDay = dateStr.slice(5);
+  const pastYears = [];
+  for (let i = 1; i <= 3; i++) pastYears.push(`${targetYear - i}-${monthDay}`);
+
+  const yearData = [];
+  for (const pastDate of pastYears) {
+    try {
+      const url = `https://archive-api.open-meteo.com/v1/archive`
+        + `?latitude=${loc.lat}&longitude=${loc.lon}`
+        + `&start_date=${pastDate}&end_date=${pastDate}`
+        + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset`
+        + `&hourly=temperature_2m,precipitation,weather_code,wind_speed_10m`
+        + `&timezone=auto`;
+      const data = await fetchJSON(url, 1);
+      if (data.daily && data.daily.time && data.daily.time.length > 0) {
+        const slots = analyzeDaySlots(data.hourly, pastDate, false);
+        yearData.push({
+          date: pastDate,
+          max: data.daily.temperature_2m_max[0],
+          min: data.daily.temperature_2m_min[0],
+          code: data.daily.weather_code[0],
+          precipSum: data.daily.precipitation_sum?.[0] ?? 0,
+          sunrise: data.daily.sunrise?.[0],
+          sunset: data.daily.sunset?.[0],
+          slots: slots
+        });
+      }
+    } catch (err) {
+      console.warn(`查詢 ${loc.name} ${pastDate} 歷史數據失敗`, err);
+    }
+  }
+
+  if (yearData.length === 0) return null;
+
+  const avgMax = Math.round(yearData.reduce((s, d) => s + d.max, 0) / yearData.length);
+  const avgMin = Math.round(yearData.reduce((s, d) => s + d.min, 0) / yearData.length);
+  const avgPrecip = Math.round((yearData.reduce((s, d) => s + d.precipSum, 0) / yearData.length) * 10) / 10;
+  const latest = yearData[yearData.length - 1];
+
+  const avgSlots = TIME_SLOTS.map((slot, si) => {
+    const yearSlots = yearData.map(y => y.slots ? y.slots[si] : null).filter(Boolean);
+    const avgScore = Math.round(yearSlots.reduce((s, sl) => s + sl.score, 0) / yearSlots.length);
+    const reasons = new Set();
+    yearSlots.forEach(sl => sl.reasons.forEach(r => reasons.add(r)));
+    return { ...slot, score: avgScore, level: getLevel(avgScore), reasons: Array.from(reasons) };
+  });
+
+  const avg = {
+    max: avgMax,
+    min: avgMin,
+    rain: avgPrecip,
+    code: yearData[0].code,
+    years: yearData.map(d => d.date),
+    sampleCount: yearData.length,
+    slots: avgSlots,
+    sunrise: latest.sunrise,
+    sunset: latest.sunset
+  };
+
+  historicalCache[cacheKey] = avg;
+  return avg;
+}
+
+/* =========================================================
+   7. 抓取資料（僅在頁面開啟或手動點擊時執行）
+   ========================================================= */
+let isFetching = false;
+
+async function fetchAllWeather() {
+  if (isFetching) return;
+  isFetching = true;
+  setLoading(true);
+  setStatus('正在載入最新資料…', 'loading');
+
+  // 手動重載時清空快取，確保取得最新資料
+  Object.keys(historicalCache).forEach(k => delete historicalCache[k]);
+  Object.keys(seasonalCache).forEach(k => delete seasonalCache[k]);
+
+  const [forecastResults, seasonalResults] = await Promise.all([
+    Promise.allSettled(
+      locations.map(loc => {
+        const url = 'https://api.open-meteo.com/v1/forecast'
+          + `?latitude=${loc.lat}&longitude=${loc.lon}`
+          + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset'
+          + '&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m'
+          + '&timezone=auto'
+          + `&forecast_days=${FORECAST_DAYS}`;
+        return fetchJSON(url).then(data => ({
+          id: loc.id,
+          daily: data.daily,
+          hourly: data.hourly
+        }));
+      })
+    ),
+    Promise.allSettled(
+      locations.map(loc => fetchSeasonalForecast(loc).then(daily => ({ id: loc.id, daily })))
+    )
+  ]);
+
+  const weatherData = {};
+  const seasonalData = {};
+  const failed = [];
+
+  forecastResults.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value && r.value.daily) {
+      weatherData[r.value.id] = { daily: r.value.daily, hourly: r.value.hourly };
+    } else {
+      failed.push(locations[i].name);
+      console.error(`無法載入 ${locations[i].name}`, r.reason);
+    }
+  });
+
+  seasonalResults.forEach(r => {
+    if (r.status === 'fulfilled' && r.value && r.value.daily) {
+      seasonalData[r.value.id] = r.value.daily;
+    }
+  });
+
+  renderTable(weatherData, seasonalData);
+
+  if (failed.length === 0) {
+    setStatus('已載入最新資料', 'ok');
+  } else if (failed.length < locations.length) {
+    setStatus(`${failed.join('、')} 載入失敗`, 'error');
+  } else {
+    setStatus('載入失敗，請重試', 'error');
+  }
+
+  lastUpdatedEl.textContent = fullDateTimeLabel();
+  setLoading(false);
+  isFetching = false;
+}
+
+/* =========================================================
+   8. 渲染表格
+   ========================================================= */
+function buildSlotHTML(slots) {
+  return slots.map(s => {
+    const tip = `${s.label}：${s.level.label}（${s.score}分）${s.reasons.length ? '｜' + s.reasons.join('、') : ''}`;
+    return `<span class="slot ${s.level.cls}" title="${tip}">${s.label}</span>`;
+  }).join('');
+}
+
+function renderTable(weatherData, seasonalData) {
+  const tbody = document.querySelector('#weatherTable tbody');
+  tbody.innerHTML = '';
+  const today = todayStr();
+
+  tripDates.forEach(dateStr => {
+    const tr = document.createElement('tr');
+    if (dateStr === today) tr.classList.add('today');
+
+    /* ---- 日期欄 ---- */
+    const dateTd = document.createElement('td');
+    dateTd.className = 'date-col';
+    const dt = new Date(dateStr + 'T00:00:00');
+    const mmdd = dateStr.slice(5).replace('-', '/');
+    const dow = isNaN(dt) ? '' : WEEKDAYS[dt.getDay()];
+    const plans = itinerary[dateStr] || [];
+    const planStar = plans.length > 0 ? ' <span style="color:#f5b400;">⭐</span>' : '';
+    dateTd.innerHTML = `${mmdd}${planStar}<div class="dow">週${dow}${dateStr === today ? ' · 今天' : ''}</div>`;
+    tr.appendChild(dateTd);
+
+    /* ---- 各地天氣欄 ---- */
+    locations.forEach(loc => {
+      const td = document.createElement('td');
+
+      const isPlan = isPlanFor(dateStr, loc.id);
+      if (isPlan) {
+        td.classList.add('plan-cell');
+        const star = document.createElement('span');
+        star.className = 'plan-star';
+        star.textContent = '⭐';
+        td.appendChild(star);
+      }
+
+      const entry = weatherData[loc.id];
+      const seasonal = seasonalData[loc.id];
+
+      if (!entry || !entry.daily || !Array.isArray(entry.daily.time)) {
+        const pending = document.createElement('span');
+        pending.className = 'pending';
+        pending.innerHTML = '—<small>載入失敗</small>';
+        td.appendChild(pending);
+        tr.appendChild(td);
+        return;
+      }
+
+      const { daily, hourly } = entry;
+      const idx = daily.time.indexOf(dateStr);
+
+      /* ====== 1. 標準預報 ====== */
+      if (idx !== -1) {
+        const maxT  = Math.round(daily.temperature_2m_max[idx]);
+        const minT  = Math.round(daily.temperature_2m_min[idx]);
+        const code  = daily.weather_code[idx];
+        const icon  = getWeatherIcon(code);
+        const text  = getWeatherText(code);
+        const slots = analyzeDaySlots(hourly, dateStr, true);
+        const sunrise = formatTime(daily.sunrise?.[idx]);
+        const sunset  = formatTime(daily.sunset?.[idx]);
+
+        const box = document.createElement('div');
+        box.className = 'cell-box';
+        box.innerHTML = `
+          <span class="wicon" title="${text}">${icon}</span>
+          <span class="temp">${maxT}° / ${minT}°</span>
+          <div class="slots">${buildSlotHTML(slots)}</div>
+          <div class="sun">🌅${sunrise} 🌇${sunset}</div>
+        `;
+        td.appendChild(box);
+        td.title = `${loc.name}｜${dateStr}${isPlan ? '（⭐ 行程）' : ''}\n${text} · ${maxT}° / ${minT}°C`;
+        tr.appendChild(td);
+        return;
+      }
+
+      /* ====== 2. 季節（長期）預報 ====== */
+      if (seasonal && Array.isArray(seasonal.time)) {
+        const sIdx = seasonal.time.indexOf(dateStr);
+        if (sIdx !== -1) {
+          const maxT  = Math.round(seasonal.temperature_2m_max[sIdx]);
+          const minT  = Math.round(seasonal.temperature_2m_min[sIdx]);
+          const code  = seasonal.weather_code?.[sIdx];
+          const precip = seasonal.precipitation_sum?.[sIdx] ?? 0;
+          const icon  = getWeatherIcon(code);
+          const text  = getWeatherText(code);
+
+          const { score } = scoreOutdoor({
+            weather_code: code,
+            precipitation: precip,
+            temperature_2m: (maxT + minT) / 2
+          });
+          const level = getLevel(score);
+
+          const box = document.createElement('div');
+          box.className = 'cell-box';
+          box.innerHTML = `
+            <span class="wicon" title="${text}">${icon}</span>
+            <span class="temp">${maxT}° / ${minT}°</span>
+            <div class="slots">
+              <span class="slot ${level.cls}" title="長期預報趨勢：${level.label}（${score}分）">${level.label}</span>
+            </div>
+            <span class="tag tag-seasonal">🔮 長期預報</span>
+          `;
+          td.appendChild(box);
+          td.title = `${loc.name}｜${dateStr}${isPlan ? '（⭐ 行程）' : ''}\n🔮 長期預報（趨勢參考）\n${text} · ${maxT}° / ${minT}°C\n降水量 ${precip} mm`;
+          tr.appendChild(td);
+          return;
+        }
+      }
+
+      /* ====== 3. 歷史估計 ====== */
+      const pending = document.createElement('span');
+      pending.className = 'pending';
+      pending.innerHTML = '🔄<small>查詢中…</small>';
+      td.appendChild(pending);
+      tr.appendChild(td);
+
+      const currentTd = td;
+      const planFlag = isPlan;
+
+      fetchHistoricalAverage(loc, dateStr).then(avg => {
+        if (avg) {
+          const icon = getWeatherIcon(avg.code);
+          const text = getWeatherText(avg.code);
+          const sunrise = formatTime(avg.sunrise);
+          const sunset  = formatTime(avg.sunset);
+
+          currentTd.querySelectorAll('.cell-box, .pending').forEach(el => el.remove());
+
+          const box = document.createElement('div');
+          box.className = 'cell-box';
+          box.innerHTML = `
+            <span class="wicon" title="${text}">${icon}</span>
+            <span class="temp">${avg.max}° / ${avg.min}°</span>
+            <div class="slots">${buildSlotHTML(avg.slots)}</div>
+            <div class="sun">🌅${sunrise} 🌇${sunset}</div>
+            <span class="tag tag-estimate">📊 估計</span>
+          `;
+          currentTd.appendChild(box);
+          currentTd.title =
+            `${loc.name}｜${dateStr}${planFlag ? '（⭐ 行程）' : ''}\n` +
+            `📊 過去三年同日平均\n${text} · ${avg.max}° / ${avg.min}°C\n平均降水量 ${avg.rain} mm`;
+        } else {
+          currentTd.querySelectorAll('.pending').forEach(el => el.remove());
+          const errSpan = document.createElement('span');
+          errSpan.className = 'pending';
+          errSpan.innerHTML = '無資料';
+          currentTd.appendChild(errSpan);
+        }
+      });
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+/* =========================================================
+   9. 啟動
+   ========================================================= */
+// 只在頁面載入時執行一次
+fetchAllWeather();
+
+// 手動重新載入按鈕
+btn.addEventListener('click', fetchAllWeather);
+</script>
+
+</body>
+</html>
