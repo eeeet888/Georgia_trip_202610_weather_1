@@ -94,7 +94,6 @@
     .dot.error { background: var(--warn); }
     @keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
 
-    /* 圖例 - 6 級 */
     .legend-bar {
       display: flex;
       justify-content: center;
@@ -119,7 +118,6 @@
       border: 1px solid rgba(0,0,0,.08);
     }
 
-    /* 表格 */
     .table-wrapper {
       overflow-x: auto;
       background: var(--card-bg);
@@ -205,7 +203,6 @@
       font-size: 0.95em;
     }
 
-    /* 早/午/晚 色塊 */
     .slots {
       display: flex;
       justify-content: center;
@@ -229,17 +226,11 @@
     .slot:hover { transform: scale(1.15); }
 
     /* ===== 6 級適宜度色系 ===== */
-    /* 1. 極佳 90-100 */
     .lv-excellent { background: #a5d6a7; color: #1b5e20; border-color: #81c784; }
-    /* 2. 適合 75-89 */
     .lv-great     { background: #c8e6c9; color: #2e7d32; border-color: #a5d6a7; }
-    /* 3. 尚可 60-74 */
     .lv-good      { background: #dcedc8; color: #558b2f; border-color: #c5e1a5; }
-    /* 4. 普通 45-59 */
     .lv-fair      { background: #fff8e1; color: #f57f17; border-color: #ffe082; }
-    /* 5. 不佳 30-44 */
     .lv-poor      { background: #ffe0b2; color: #e65100; border-color: #ffcc80; }
-    /* 6. 不宜 0-29 */
     .lv-bad       { background: #ffcdd2; color: #b71c1c; border-color: #ef9a9a; }
 
     .sun {
@@ -293,16 +284,16 @@
 <div class="container">
 
   <div class="top-info">
-    <div>🕒 最後更新：<strong id="lastUpdated">載入中…</strong></div>
+    <div>🕒 資料時間：<strong id="lastUpdated">載入中…</strong></div>
     <div>📍 9 個地點 · 12 天行程</div>
   </div>
 
   <h1>行程戶外活動適宜度</h1>
-  <p class="subtitle">格魯吉亞 &amp; 杜拜 · 綜合降雨、溫度、風速判斷 · 每 30 分鐘自動更新</p>
+  <p class="subtitle">格魯吉亞 &amp; 杜拜 · 綜合降雨、溫度、風速判斷 · 開啟頁面時自動載入最新資料</p>
 
   <div class="toolbar">
     <button id="refreshBtn" type="button">
-      <span id="btnIcon">🔄</span><span id="btnText">立即更新</span>
+      <span id="btnIcon">🔄</span><span id="btnText">重新載入</span>
     </button>
     <span id="status" class="status">
       <span class="dot loading" id="statusDot"></span>
@@ -387,7 +378,6 @@ const itinerary = {
   '2026-10-27': ['dubai']
 };
 
-const REFRESH_INTERVAL_MS = 30 * 60 * 1000;
 const FORECAST_DAYS = 16;
 const SEASONAL_DAYS = 46;
 
@@ -419,9 +409,6 @@ function getLevel(score) {
   return LEVELS[LEVELS.length - 1];
 }
 
-/**
- * 綜合評估單一小時的戶外適宜度（0–100 分）
- */
 function scoreOutdoor(hourData) {
   let score = 100;
   const reasons = [];
@@ -432,7 +419,6 @@ function scoreOutdoor(hourData) {
   const temp = hourData.temperature_2m;
   const wind = hourData.wind_speed_10m;
 
-  // ---- 天氣代碼（主要扣分來源）----
   if (typeof code === 'number') {
     if (code >= 96) { score -= 85; reasons.push('雷暴冰雹'); }
     else if (code === 95) { score -= 75; reasons.push('雷暴'); }
@@ -451,13 +437,11 @@ function scoreOutdoor(hourData) {
     else if (code === 2) { score -= 3; }
   }
 
-  // ---- 降水量 ----
   if (precip > 8) { score -= 25; reasons.push('大雨量'); }
   else if (precip > 4) { score -= 18; }
   else if (precip > 2) { score -= 12; }
   else if (precip > 0.5) { score -= 6; }
 
-  // ---- 降雨機率 ----
   if (typeof prob === 'number') {
     if (prob >= 85) { score -= 18; reasons.push('極高降雨機率'); }
     else if (prob >= 70) { score -= 12; reasons.push('高降雨機率'); }
@@ -465,7 +449,6 @@ function scoreOutdoor(hourData) {
     else if (prob >= 40) { score -= 3; }
   }
 
-  // ---- 溫度（舒適區 8–26°C 為滿分區間）----
   if (typeof temp === 'number') {
     if (temp < -15) { score -= 55; reasons.push('極寒'); }
     else if (temp < -8) { score -= 45; reasons.push('嚴寒'); }
@@ -479,7 +462,6 @@ function scoreOutdoor(hourData) {
     else if (temp > 26) { score -= 5; }
   }
 
-  // ---- 風速 ----
   if (typeof wind === 'number') {
     if (wind > 70) { score -= 35; reasons.push('暴風'); }
     else if (wind > 55) { score -= 25; reasons.push('強風'); }
@@ -490,9 +472,6 @@ function scoreOutdoor(hourData) {
   return { score: Math.max(0, Math.min(100, score)), reasons };
 }
 
-/**
- * 分析某日各時段適宜度
- */
 function analyzeDaySlots(hourly, dateStr, hasProb) {
   if (!hourly || !Array.isArray(hourly.time)) return null;
 
@@ -641,7 +620,7 @@ function setStatus(text, state) {
 function setLoading(on) {
   btn.disabled = on;
   btnIcon.textContent = on ? '⏳' : '🔄';
-  btnText.textContent = on ? '更新中…' : '立即更新';
+  btnText.textContent = on ? '載入中…' : '重新載入';
 }
 
 /* =========================================================
@@ -741,7 +720,7 @@ async function fetchHistoricalAverage(loc, dateStr) {
 }
 
 /* =========================================================
-   7. 抓取資料
+   7. 抓取資料（僅在頁面開啟或手動點擊時執行）
    ========================================================= */
 let isFetching = false;
 
@@ -749,7 +728,11 @@ async function fetchAllWeather() {
   if (isFetching) return;
   isFetching = true;
   setLoading(true);
-  setStatus('正在更新…', 'loading');
+  setStatus('正在載入最新資料…', 'loading');
+
+  // 手動重載時清空快取，確保取得最新資料
+  Object.keys(historicalCache).forEach(k => delete historicalCache[k]);
+  Object.keys(seasonalCache).forEach(k => delete seasonalCache[k]);
 
   const [forecastResults, seasonalResults] = await Promise.all([
     Promise.allSettled(
@@ -794,11 +777,11 @@ async function fetchAllWeather() {
   renderTable(weatherData, seasonalData);
 
   if (failed.length === 0) {
-    setStatus('已更新', 'ok');
+    setStatus('已載入最新資料', 'ok');
   } else if (failed.length < locations.length) {
     setStatus(`${failed.join('、')} 載入失敗`, 'error');
   } else {
-    setStatus('更新失敗，請重試', 'error');
+    setStatus('載入失敗，請重試', 'error');
   }
 
   lastUpdatedEl.textContent = fullDateTimeLabel();
@@ -850,10 +833,10 @@ function renderTable(weatherData, seasonalData) {
       }
 
       const entry = weatherData[loc.id];
-      const seasonal = seasonalData[loc.id       ];
+      const seasonal = seasonalData[loc.id];
 
-      if (!entry || ! constentry.daily || min !Array.isArray(entryT.daily.time)) {
-        const  pending = document.createElement('span');
+      if (!entry || !entry.daily || !Array.isArray(entry.daily.time)) {
+        const pending = document.createElement('span');
         pending.className = 'pending';
         pending.innerHTML = '—<small>載入失敗</small>';
         td.appendChild(pending);
@@ -867,7 +850,7 @@ function renderTable(weatherData, seasonalData) {
       /* ====== 1. 標準預報 ====== */
       if (idx !== -1) {
         const maxT  = Math.round(daily.temperature_2m_max[idx]);
- = Math.round(daily.temperature_2m_min[idx]);
+        const minT  = Math.round(daily.temperature_2m_min[idx]);
         const code  = daily.weather_code[idx];
         const icon  = getWeatherIcon(code);
         const text  = getWeatherText(code);
@@ -971,19 +954,13 @@ function renderTable(weatherData, seasonalData) {
 }
 
 /* =========================================================
-   9. 啟動 + 自動刷新
+   9. 啟動
    ========================================================= */
-btn.addEventListener('click', fetchAllWeather);
+// 只在頁面載入時執行一次
 fetchAllWeather();
-setInterval(fetchAllWeather, REFRESH_INTERVAL_MS);
 
-let lastVisible = Date.now();
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    if (Date.now() - lastVisible > 5 * 60 * 1000) fetchAllWeather();
-    lastVisible = Date.now();
-  }
-});
+// 手動重新載入按鈕
+btn.addEventListener('click', fetchAllWeather);
 </script>
 
 </body>
