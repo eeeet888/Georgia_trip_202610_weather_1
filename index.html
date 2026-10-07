@@ -14,6 +14,7 @@
       --text: #333;
       --muted: #6c757d;
       --warn: #d9534f;
+      --sky: #42a5f5;
     }
     * { box-sizing: border-box; }
     body {
@@ -94,7 +95,6 @@
     .dot.error { background: var(--warn); }
     @keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
 
-    /* 圖例 + 扣分說明合併區 */
     .info-panel {
       margin-bottom: 14px;
       padding: 10px 14px;
@@ -121,8 +121,25 @@
       display: inline-block;
       border: 1px solid rgba(0,0,0,.08);
     }
+    /* 蓝天降雪的图例色块 */
+    .legend-bar i.sky-demo {
+      position: relative;
+      background: #c8e6c9;
+      box-shadow: 0 0 0 2px var(--sky);
+      width: 14px; height: 14px;
+      border-radius: 4px;
+    }
+    .legend-bar i.sky-demo::after {
+      content: '';
+      position: absolute;
+      top: -3px; right: -3px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #bbdefb 0%, #42a5f5 100%);
+      border: 1.5px solid #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.3);
+    }
 
-    /* 扣分因素說明行 */
     .deduct-line {
       text-align: center;
       font-size: 0.74em;
@@ -142,6 +159,20 @@
     }
     .deduct-line .d.good {
       color: #2e7d32;
+      font-weight: 600;
+    }
+    .deduct-line .d.sky {
+      color: #1565c0;
+      font-weight: 700;
+    }
+
+    .hint-line {
+      text-align: center;
+      font-size: 0.74em;
+      color: #546e7a;
+      padding-top: 6px;
+      margin-top: 6px;
+      border-top: 1px dashed var(--border);
       font-weight: 600;
     }
 
@@ -233,8 +264,8 @@
     .slots {
       display: flex;
       justify-content: center;
-      gap: 3px;
-      margin-top: 2px;
+      gap: 4px;
+      margin-top: 4px;
     }
     .slot {
       font-size: 0.72em;
@@ -246,11 +277,15 @@
       justify-content: center;
       border-radius: 6px;
       line-height: 1;
-      cursor: default;
+      cursor: pointer;
       transition: transform .15s;
       border: 1px solid transparent;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
     }
     .slot:hover { transform: scale(1.15); }
+    .slot:active { transform: scale(0.95); }
 
     /* ===== 6 級適宜度色系 ===== */
     .lv-excellent { background: #a5d6a7; color: #1b5e20; border-color: #81c784; }
@@ -259,6 +294,25 @@
     .lv-fair      { background: #fff8e1; color: #f57f17; border-color: #ffe082; }
     .lv-poor      { background: #ffe0b2; color: #e65100; border-color: #ffcc80; }
     .lv-bad       { background: #ffcdd2; color: #b71c1c; border-color: #ef9a9a; }
+
+    /* ===== 藍天降雪標記 ===== */
+    .slot.has-clearsky {
+      box-shadow: 0 0 0 2px var(--sky), 0 0 0 3.5px rgba(66,165,245,.22);
+    }
+    .slot.has-clearsky::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #bbdefb 0%, #42a5f5 100%);
+      border: 1.5px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.3);
+      z-index: 4;
+      pointer-events: none;
+    }
 
     .sun {
       font-size: 0.68em;
@@ -297,6 +351,157 @@
     }
     footer a { color: var(--muted); }
 
+    /* ===== 詳情彈出面板 ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .modal-overlay.show {
+      display: flex;
+      opacity: 1;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,.25);
+      position: relative;
+      transform: translateY(10px);
+      transition: transform .2s;
+    }
+    .modal-overlay.show .modal-card {
+      transform: translateY(0);
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f1f3f5;
+      border: none;
+      font-size: 1em;
+      cursor: pointer;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { background: #e9ecef; }
+
+    .modal-title {
+      font-size: 1.05em;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+      padding-right: 32px;
+    }
+    .modal-sub {
+      font-size: 0.82em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .modal-score-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #f8f9fa;
+    }
+    .modal-score {
+      font-size: 2.2em;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .modal-level {
+      font-size: 0.95em;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .modal-section {
+      margin-bottom: 14px;
+    }
+    .modal-section-title {
+      font-size: 0.78em;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .reason-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .reason-chip {
+      display: inline-block;
+      font-size: 0.78em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ffebee;
+      color: #b71c1c;
+      font-weight: 600;
+    }
+    .reason-chip.none {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .reason-chip.info {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .detail-item {
+      background: #f8f9fa;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.82em;
+    }
+    .detail-item .label {
+      color: var(--muted);
+      font-size: 0.85em;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .detail-item .value {
+      font-weight: 700;
+      color: #37474f;
+    }
+
+    .modal-note {
+      font-size: 0.75em;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+
     @media (max-width: 600px) {
       body { padding: 12px 8px; }
       h1 { font-size: 1.15em; }
@@ -304,6 +509,13 @@
       .slot { width: 22px; height: 22px; font-size: 0.68em; }
       .legend-bar { font-size: 0.7em; gap: 7px; }
       .deduct-line { font-size: 0.7em; }
+      .hint-line { font-size: 0.7em; }
+      .modal-overlay { padding: 0; align-items: flex-end; }
+      .modal-card {
+        border-radius: 16px 16px 0 0;
+        max-width: 100%;
+        max-height: 85vh;
+      }
     }
   </style>
 </head>
@@ -329,7 +541,6 @@
     </span>
   </div>
 
-  <!-- 圖例 + 扣分說明 -->
   <div class="info-panel">
     <div class="legend-bar">
       <span><i style="background:#a5d6a7;"></i>極佳 90+</span>
@@ -338,6 +549,7 @@
       <span><i style="background:#fff8e1;"></i>普通 45+</span>
       <span><i style="background:#ffe0b2;"></i>不佳 30+</span>
       <span><i style="background:#ffcdd2;"></i>不宜 &lt;30</span>
+      <span><i class="sky-demo"></i>藍天降雪</span>
       <span>⭐ 行程目的地</span>
     </div>
     <div class="deduct-line">
@@ -349,8 +561,10 @@
       <span class="d">💧 雨量 &gt;8mm -25</span>
       <span class="d">☔ 高機率 &gt;85% -18</span>
       <span class="d">💨 強風 &gt;55km/h -25</span>
-      <span class="d good">🌤️ 藍天降雪、過冷過熱皆不扣分</span>
+      <span class="d good">🌤️ 過冷過熱不扣分</span>
+      <span class="d sky">🔵 藍天降雪（藍框）不扣分</span>
     </div>
+    <div class="hint-line">👆 點擊色塊查看詳細分數與原因</div>
   </div>
 
   <div class="table-wrapper">
@@ -375,9 +589,34 @@
 
   <footer>
     資料來源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
-    時段：早 06–12、午 12–18、晚 18–24 · 滑鼠移到色塊可看該時段的具體扣分原因<br>
+    時段：早 06–12、午 12–18、晚 18–24<br>
     超過 16 天：優先顯示「長期預報」，若無資料則以「估計」顯示過去三年同日平均值
   </footer>
+</div>
+
+<!-- 詳情彈出面板 -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-title" id="modalTitle">—</div>
+    <div class="modal-sub" id="modalSub">—</div>
+    <div class="modal-score-row">
+      <div class="modal-score" id="modalScore">—</div>
+      <div>
+        <div class="modal-level" id="modalLevel">—</div>
+        <div style="font-size:0.75em;color:#6c757d;margin-top:4px;">戶外活動適宜度</div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">扣分原因</div>
+      <div class="reason-list" id="modalReasons"></div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">天氣細節</div>
+      <div class="detail-grid" id="modalDetails"></div>
+    </div>
+    <div class="modal-note" id="modalNote"></div>
+  </div>
 </div>
 
 <script>
@@ -402,9 +641,6 @@ const tripDates = [
   "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27"
 ];
 
-/* =========================================================
-   ★★★ 行程計劃表 ★★★
-   ========================================================= */
 const itinerary = {
   '2026-10-16': ['tbilisi'],
   '2026-10-17': ['tbilisi'],
@@ -429,22 +665,21 @@ const TIME_SLOTS = [
   { id: 'evening',   label: '晚', start: 18, end: 24 }
 ];
 
-// 藍天降雪的雲量門檻（低於此值視為有藍天）
 const CLEAR_SKY_CLOUD_THRESHOLD = 60;
 
 const historicalCache = {};
 const seasonalCache = {};
 
 /* =========================================================
-   2. 六級適宜度評分系統
+   2. 評分系統
    ========================================================= */
 const LEVELS = [
-  { min: 90, key: 'excellent', cls: 'lv-excellent', label: '極佳' },
-  { min: 75, key: 'great',     cls: 'lv-great',     label: '適合' },
-  { min: 60, key: 'good',      cls: 'lv-good',      label: '尚可' },
-  { min: 45, key: 'fair',      cls: 'lv-fair',      label: '普通' },
-  { min: 30, key: 'poor',      cls: 'lv-poor',      label: '不佳' },
-  { min: 0,  key: 'bad',       cls: 'lv-bad',       label: '不宜' }
+  { min: 90, key: 'excellent', cls: 'lv-excellent', label: '極佳', color: '#1b5e20', bg: '#a5d6a7' },
+  { min: 75, key: 'great',     cls: 'lv-great',     label: '適合', color: '#2e7d32', bg: '#c8e6c9' },
+  { min: 60, key: 'good',      cls: 'lv-good',      label: '尚可', color: '#558b2f', bg: '#dcedc8' },
+  { min: 45, key: 'fair',      cls: 'lv-fair',      label: '普通', color: '#f57f17', bg: '#fff8e1' },
+  { min: 30, key: 'poor',      cls: 'lv-poor',      label: '不佳', color: '#e65100', bg: '#ffe0b2' },
+  { min: 0,  key: 'bad',       cls: 'lv-bad',       label: '不宜', color: '#b71c1c', bg: '#ffcdd2' }
 ];
 
 function getLevel(score) {
@@ -454,16 +689,10 @@ function getLevel(score) {
   return LEVELS[LEVELS.length - 1];
 }
 
-// 判斷是否為降雪代碼
 function isSnowCode(c) {
   return typeof c === 'number' && ((c >= 71 && c <= 77) || (c >= 85 && c <= 86));
 }
 
-/**
- * 綜合評估單一小時的戶外適宜度（0–100 分）
- * ★ 溫度不扣分
- * ★ 藍天降雪（雲量 < 60%）不扣分
- */
 function scoreOutdoor(hourData) {
   let score = 100;
   const reasons = [];
@@ -474,80 +703,73 @@ function scoreOutdoor(hourData) {
   const cloud = hourData.cloud_cover;
   const wind = hourData.wind_speed_10m;
 
-  // 是否為藍天降雪
   const isSnowy = isSnowCode(code);
   const isClearSkySnow = isSnowy && typeof cloud === 'number' && cloud < CLEAR_SKY_CLOUD_THRESHOLD;
 
-  // ---- 天氣代碼 ----
   if (typeof code === 'number') {
     if (code >= 96) {
-      score -= 85; reasons.push('雷暴冰雹');
+      score -= 85; reasons.push('雷暴冰雹 -85');
     } else if (code === 95) {
-      score -= 75; reasons.push('雷暴');
+      score -= 75; reasons.push('雷暴 -75');
     } else if (isSnowy) {
       if (isClearSkySnow) {
-        // ★ 藍天降雪：不扣分
-        reasons.push('藍天降雪');
+        reasons.push('藍天降雪（不扣分）');
       } else {
-        if (code >= 85) { score -= 60; reasons.push('強陣雪'); }
-        else if (code >= 75) { score -= 60; reasons.push('大雪'); }
-        else { score -= 50; reasons.push('降雪'); }
+        if (code >= 85) { score -= 60; reasons.push('強陣雪 -60'); }
+        else if (code >= 75) { score -= 60; reasons.push('大雪 -60'); }
+        else { score -= 50; reasons.push('降雪 -50'); }
       }
     } else if (code >= 65 && code <= 67) {
-      score -= 55; reasons.push('凍雨');
+      score -= 55; reasons.push('凍雨 -55');
     } else if (code >= 63 && code <= 64) {
-      score -= 50; reasons.push('中雨');
+      score -= 50; reasons.push('中雨 -50');
     } else if (code === 61 || code === 62) {
-      score -= 45; reasons.push('降雨');
+      score -= 45; reasons.push('降雨 -45');
     } else if (code === 80) {
-      score -= 35; reasons.push('小陣雨');
+      score -= 35; reasons.push('小陣雨 -35');
     } else if (code === 81) {
-      score -= 45; reasons.push('陣雨');
+      score -= 45; reasons.push('陣雨 -45');
     } else if (code === 82) {
-      score -= 55; reasons.push('強陣雨');
+      score -= 55; reasons.push('強陣雨 -55');
     } else if (code >= 51 && code <= 55) {
-      score -= 25; reasons.push('毛毛雨');
+      score -= 25; reasons.push('毛毛雨 -25');
     } else if (code === 45 || code === 48) {
-      score -= 20; reasons.push('有霧');
+      score -= 20; reasons.push('有霧 -20');
     } else if (code === 3) {
-      score -= 8; reasons.push('陰天');
+      score -= 8; reasons.push('陰天 -8');
     } else if (code === 2) {
       score -= 3;
     }
   }
 
-  // ---- 降水量（藍天降雪不扣） ----
   if (!isClearSkySnow) {
-    if (precip > 8) { score -= 25; reasons.push('大雨量'); }
-    else if (precip > 4) { score -= 18; }
-    else if (precip > 2) { score -= 12; }
-    else if (precip > 0.5) { score -= 6; }
+    if (precip > 8) { score -= 25; reasons.push('大雨量 -25'); }
+    else if (precip > 4) { score -= 18; reasons.push('中雨量 -18'); }
+    else if (precip > 2) { score -= 12; reasons.push('小雨量 -12'); }
+    else if (precip > 0.5) { score -= 6; reasons.push('微量雨 -6'); }
   }
 
-  // ---- 降雨機率（藍天降雪不扣） ----
   if (!isClearSkySnow && typeof prob === 'number') {
-    if (prob >= 85) { score -= 18; reasons.push('極高降雨機率'); }
-    else if (prob >= 70) { score -= 12; reasons.push('高降雨機率'); }
-    else if (prob >= 55) { score -= 7; }
-    else if (prob >= 40) { score -= 3; }
+    if (prob >= 85) { score -= 18; reasons.push('極高降雨機率 -18'); }
+    else if (prob >= 70) { score -= 12; reasons.push('高降雨機率 -12'); }
+    else if (prob >= 55) { score -= 7; reasons.push('中降雨機率 -7'); }
+    else if (prob >= 40) { score -= 3; reasons.push('略高降雨機率 -3'); }
   }
 
-  // ★ 溫度：不扣分（已移除）
-
-  // ---- 風速 ----
   if (typeof wind === 'number') {
-    if (wind > 70) { score -= 35; reasons.push('暴風'); }
-    else if (wind > 55) { score -= 25; reasons.push('強風'); }
-    else if (wind > 42) { score -= 15; reasons.push('大風'); }
-    else if (wind > 30) { score -= 6; }
+    if (wind > 70) { score -= 35; reasons.push('暴風 -35'); }
+    else if (wind > 55) { score -= 25; reasons.push('強風 -25'); }
+    else if (wind > 42) { score -= 15; reasons.push('大風 -15'); }
+    else if (wind > 30) { score -= 6; reasons.push('風稍大 -6'); }
   }
 
-  return { score: Math.max(0, Math.min(100, score)), reasons };
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    reasons,
+    clearSkySnow: isClearSkySnow
+  };
 }
 
-/**
- * 分析某日各時段適宜度
- */
 function analyzeDaySlots(hourly, dateStr, hasProb) {
   if (!hourly || !Array.isArray(hourly.time)) return null;
 
@@ -560,41 +782,78 @@ function analyzeDaySlots(hourly, dateStr, hasProb) {
       }
     });
 
-    if (indices.length === 0) {
-      return { ...slot, score: 80, level: getLevel(80), reasons: [] };
-    }
+    const emptyReturn = {
+      ...slot,
+      score: 80,
+      level: getLevel(80),
+      reasons: [],
+      avgTemp: null,
+      totalPrecip: 0,
+      avgProb: null,
+      maxWind: null,
+      mainCode: null,
+      hasClearSkySnow: false
+    };
 
-    let totalScore = 0;
-    const reasonSet = new Set();
+    if (indices.length === 0) return emptyReturn;
+
+    let totalScore = 0, totalTemp = 0, totalPrecip = 0, totalProb = 0, maxWind = 0;
+    let tempCount = 0, probCount = 0;
     let hasAnyData = false;
+    let snowHourCount = 0;
+    let clearSkySnowHourCount = 0;
+    const reasonSet = new Set();
+    const codeCount = {};
 
     indices.forEach(i => {
+      const code = hourly.weather_code?.[i];
       const hourData = {
         temperature_2m: hourly.temperature_2m?.[i],
         precipitation: hourly.precipitation?.[i],
         precipitation_probability: hourly.precipitation_probability?.[i],
-        weather_code: hourly.weather_code?.[i],
+        weather_code: code,
         cloud_cover: hourly.cloud_cover?.[i],
         wind_speed_10m: hourly.wind_speed_10m?.[i]
       };
+
       if (hourData.weather_code !== undefined || hourData.temperature_2m !== undefined) {
         hasAnyData = true;
-        const { score, reasons } = scoreOutdoor(hourData);
-        totalScore += score;
-        reasons.forEach(r => reasonSet.add(r));
+        const result = scoreOutdoor(hourData);
+        totalScore += result.score;
+        result.reasons.forEach(r => reasonSet.add(r));
+
+        // 統計降雪與藍天降雪
+        if (isSnowCode(code)) {
+          snowHourCount++;
+          if (result.clearSkySnow) clearSkySnowHourCount++;
+        }
       }
+
+      if (typeof hourData.temperature_2m === 'number') { totalTemp += hourData.temperature_2m; tempCount++; }
+      if (typeof hourData.precipitation === 'number') totalPrecip += hourData.precipitation;
+      if (typeof hourData.precipitation_probability === 'number') { totalProb += hourData.precipitation_probability; probCount++; }
+      if (typeof hourData.wind_speed_10m === 'number' && hourData.wind_speed_10m > maxWind) maxWind = hourData.wind_speed_10m;
+      if (typeof code === 'number') codeCount[code] = (codeCount[code] || 0) + 1;
     });
 
-    if (!hasAnyData) {
-      return { ...slot, score: 80, level: getLevel(80), reasons: [] };
-    }
+    if (!hasAnyData) return emptyReturn;
 
     const avgScore = Math.round(totalScore / indices.length);
+    const mainCode = Object.keys(codeCount).sort((a,b) => codeCount[b] - codeCount[a])[0];
+    // 多數小時為藍天降雪 → 標記為藍天降雪時段
+    const hasClearSkySnow = snowHourCount > 0 && clearSkySnowHourCount >= Math.ceil(snowHourCount / 2);
+
     return {
       ...slot,
       score: avgScore,
       level: getLevel(avgScore),
-      reasons: Array.from(reasonSet)
+      reasons: Array.from(reasonSet),
+      avgTemp: tempCount > 0 ? Math.round(totalTemp / tempCount) : null,
+      totalPrecip: Math.round(totalPrecip * 10) / 10,
+      avgProb: probCount > 0 ? Math.round(totalProb / probCount) : null,
+      maxWind: maxWind > 0 ? Math.round(maxWind) : null,
+      mainCode: mainCode !== undefined ? parseInt(mainCode, 10) : null,
+      hasClearSkySnow
     };
   });
 }
@@ -680,7 +939,78 @@ function isPlanFor(dateStr, locId) {
 }
 
 /* =========================================================
-   4. 狀態列 / 按鈕
+   4. 詳情面板
+   ========================================================= */
+const modal         = document.getElementById('detailModal');
+const modalClose    = document.getElementById('modalClose');
+const modalTitle    = document.getElementById('modalTitle');
+const modalSub      = document.getElementById('modalSub');
+const modalScore    = document.getElementById('modalScore');
+const modalLevel    = document.getElementById('modalLevel');
+const modalReasons  = document.getElementById('modalReasons');
+const modalDetails  = document.getElementById('modalDetails');
+const modalNote     = document.getElementById('modalNote');
+
+function openDetail(data) {
+  modalTitle.textContent = `${data.locName} · ${data.dateLabel}`;
+  modalSub.textContent = `${data.slotLabel}（${data.timeRange}）`;
+
+  modalScore.textContent = data.score;
+  modalScore.style.color = data.level.color;
+  modalLevel.textContent = data.level.label;
+  modalLevel.style.background = data.level.bg;
+  modalLevel.style.color = data.level.color;
+
+  modalReasons.innerHTML = '';
+  if (data.reasons.length === 0) {
+    const chip = document.createElement('span');
+    chip.className = 'reason-chip none';
+    chip.textContent = '✅ 無扣分因素';
+    modalReasons.appendChild(chip);
+  } else {
+    data.reasons.forEach(r => {
+      const isInfo = r.includes('不扣分');
+      const chip = document.createElement('span');
+      chip.className = 'reason-chip' + (isInfo ? ' info' : '');
+      chip.textContent = r;
+      modalReasons.appendChild(chip);
+    });
+  }
+
+  const details = [];
+  if (data.avgTemp !== null) details.push(['平均溫度', `${data.avgTemp}°C`]);
+  if (data.totalPrecip !== null) details.push(['降水量', `${data.totalPrecip} mm`]);
+  if (data.avgProb !== null) details.push(['降雨機率', `${data.avgProb}%`]);
+  if (data.maxWind !== null) details.push(['最大風速', `${data.maxWind} km/h`]);
+  if (data.mainCode !== null) details.push(['主要天氣', `${getWeatherIcon(data.mainCode)} ${getWeatherText(data.mainCode)}`]);
+  if (data.sunrise) details.push(['日出', data.sunrise]);
+  if (data.sunset) details.push(['日落', data.sunset]);
+
+  modalDetails.innerHTML = details.map(([label, value]) => `
+    <div class="detail-item">
+      <span class="label">${label}</span>
+      <span class="value">${value}</span>
+    </div>
+  `).join('');
+
+  modalNote.textContent = data.note || '';
+  modal.classList.add('show');
+}
+
+function closeDetail() {
+  modal.classList.remove('show');
+}
+
+modalClose.addEventListener('click', closeDetail);
+modal.addEventListener('click', e => {
+  if (e.target === modal) closeDetail();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail();
+});
+
+/* =========================================================
+   5. 狀態列 / 按鈕
    ========================================================= */
 const btn           = document.getElementById('refreshBtn');
 const btnIcon       = document.getElementById('btnIcon');
@@ -701,7 +1031,7 @@ function setLoading(on) {
 }
 
 /* =========================================================
-   5. 季節（長期）預報
+   6. 季節預報
    ========================================================= */
 async function fetchSeasonalForecast(loc) {
   const cacheKey = `${loc.id}_seasonal`;
@@ -726,7 +1056,7 @@ async function fetchSeasonalForecast(loc) {
 }
 
 /* =========================================================
-   6. 歷史平均值（過去三年同日）
+   7. 歷史平均值
    ========================================================= */
 async function fetchHistoricalAverage(loc, dateStr) {
   const cacheKey = `${loc.id}_${dateStr}`;
@@ -777,7 +1107,27 @@ async function fetchHistoricalAverage(loc, dateStr) {
     const avgScore = Math.round(yearSlots.reduce((s, sl) => s + sl.score, 0) / yearSlots.length);
     const reasons = new Set();
     yearSlots.forEach(sl => sl.reasons.forEach(r => reasons.add(r)));
-    return { ...slot, score: avgScore, level: getLevel(avgScore), reasons: Array.from(reasons) };
+
+    const tempVals = yearSlots.map(sl => sl.avgTemp).filter(v => v !== null);
+    const precipVals = yearSlots.map(sl => sl.totalPrecip).filter(v => v !== null);
+    const windVals = yearSlots.map(sl => sl.maxWind).filter(v => v !== null);
+
+    // 三年中有過半數年份該時段是藍天降雪 → 標記為藍天降雪
+    const clearSkyCount = yearSlots.filter(sl => sl.hasClearSkySnow).length;
+    const hasClearSkySnow = yearSlots.length > 0 && clearSkyCount >= Math.ceil(yearSlots.length / 2);
+
+    return {
+      ...slot,
+      score: avgScore,
+      level: getLevel(avgScore),
+      reasons: Array.from(reasons),
+      avgTemp: tempVals.length ? Math.round(tempVals.reduce((a,b)=>a+b,0)/tempVals.length) : null,
+      totalPrecip: precipVals.length ? Math.round((precipVals.reduce((a,b)=>a+b,0)/precipVals.length) * 10) / 10 : 0,
+      avgProb: null,
+      maxWind: windVals.length ? Math.round(windVals.reduce((a,b)=>a+b,0)/windVals.length) : null,
+      mainCode: yearData[0].code,
+      hasClearSkySnow
+    };
   });
 
   const avg = {
@@ -797,7 +1147,7 @@ async function fetchHistoricalAverage(loc, dateStr) {
 }
 
 /* =========================================================
-   7. 抓取資料
+   8. 抓取資料
    ========================================================= */
 let isFetching = false;
 
@@ -866,12 +1216,31 @@ async function fetchAllWeather() {
 }
 
 /* =========================================================
-   8. 渲染表格
+   9. 渲染表格
    ========================================================= */
-function buildSlotHTML(slots) {
+function buildSlotHTML(slots, loc, dateStr, sunrise, sunset, note) {
   return slots.map(s => {
-    const tip = `${s.label}：${s.level.label}（${s.score}分）${s.reasons.length ? '｜' + s.reasons.join('、') : ''}`;
-    return `<span class="slot ${s.level.cls}" title="${tip}">${s.label}</span>`;
+    const detailData = {
+      locName: loc.name,
+      dateLabel: dateStr.slice(5).replace('-', '/') + '（' + WEEKDAYS[new Date(dateStr + 'T00:00:00').getDay()] + '）',
+      slotLabel: s.label === '早' ? '上午' : s.label === '午' ? '下午' : '晚間',
+      timeRange: `${String(s.start).padStart(2, '0')}:00–${String(s.end).padStart(2, '0')}:00`,
+      score: s.score,
+      level: s.level,
+      reasons: s.reasons,
+      avgTemp: s.avgTemp,
+      totalPrecip: s.totalPrecip,
+      avgProb: s.avgProb,
+      maxWind: s.maxWind,
+      mainCode: s.mainCode,
+      sunrise, sunset,
+      note
+    };
+    const jsonStr = encodeURIComponent(JSON.stringify(detailData));
+    const clearSkyClass = s.hasClearSkySnow ? ' has-clearsky' : '';
+    const clearSkyTip = s.hasClearSkySnow ? ' 🔵藍天降雪' : '';
+    const tip = `${s.label}：${s.level.label}（${s.score}分）${s.reasons.length ? '｜' + s.reasons.join('、') : ''}${clearSkyTip}`;
+    return `<span class="slot ${s.level.cls}${clearSkyClass}" data-detail="${jsonStr}" title="${tip}">${s.label}</span>`;
   }).join('');
 }
 
@@ -884,7 +1253,6 @@ function renderTable(weatherData, seasonalData) {
     const tr = document.createElement('tr');
     if (dateStr === today) tr.classList.add('today');
 
-    /* ---- 日期欄 ---- */
     const dateTd = document.createElement('td');
     dateTd.className = 'date-col';
     const dt = new Date(dateStr + 'T00:00:00');
@@ -895,7 +1263,6 @@ function renderTable(weatherData, seasonalData) {
     dateTd.innerHTML = `${mmdd}${planStar}<div class="dow">週${dow}${dateStr === today ? ' · 今天' : ''}</div>`;
     tr.appendChild(dateTd);
 
-    /* ---- 各地天氣欄 ---- */
     locations.forEach(loc => {
       const td = document.createElement('td');
 
@@ -923,7 +1290,7 @@ function renderTable(weatherData, seasonalData) {
       const { daily, hourly } = entry;
       const idx = daily.time.indexOf(dateStr);
 
-      /* ====== 1. 標準預報 ====== */
+      /* ====== 標準預報 ====== */
       if (idx !== -1) {
         const maxT  = Math.round(daily.temperature_2m_max[idx]);
         const minT  = Math.round(daily.temperature_2m_min[idx]);
@@ -939,7 +1306,7 @@ function renderTable(weatherData, seasonalData) {
         box.innerHTML = `
           <span class="wicon" title="${text}">${icon}</span>
           <span class="temp">${maxT}° / ${minT}°</span>
-          <div class="slots">${buildSlotHTML(slots)}</div>
+          <div class="slots">${buildSlotHTML(slots, loc, dateStr, sunrise, sunset, '實際預報')}</div>
           <div class="sun">🌅${sunrise} 🌇${sunset}</div>
         `;
         td.appendChild(box);
@@ -948,7 +1315,7 @@ function renderTable(weatherData, seasonalData) {
         return;
       }
 
-      /* ====== 2. 季節（長期）預報 ====== */
+      /* ====== 長期預報 ====== */
       if (seasonal && Array.isArray(seasonal.time)) {
         const sIdx = seasonal.time.indexOf(dateStr);
         if (sIdx !== -1) {
@@ -959,11 +1326,30 @@ function renderTable(weatherData, seasonalData) {
           const icon  = getWeatherIcon(code);
           const text  = getWeatherText(code);
 
-          const { score } = scoreOutdoor({
+          const result = scoreOutdoor({
             weather_code: code,
             precipitation: precip
           });
+          const score = result.score;
           const level = getLevel(score);
+          const reasons = result.reasons;
+
+          const detailData = {
+            locName: loc.name,
+            dateLabel: dateStr.slice(5).replace('-', '/'),
+            slotLabel: '全天',
+            timeRange: '長期趨勢',
+            score, level,
+            reasons,
+            avgTemp: Math.round((maxT + minT) / 2),
+            totalPrecip: precip,
+            avgProb: null,
+            maxWind: null,
+            mainCode: code,
+            sunrise: null, sunset: null,
+            note: '🔮 此為長期預報（EC46 模型），趨勢僅供參考'
+          };
+          const jsonStr = encodeURIComponent(JSON.stringify(detailData));
 
           const box = document.createElement('div');
           box.className = 'cell-box';
@@ -971,18 +1357,18 @@ function renderTable(weatherData, seasonalData) {
             <span class="wicon" title="${text}">${icon}</span>
             <span class="temp">${maxT}° / ${minT}°</span>
             <div class="slots">
-              <span class="slot ${level.cls}" title="長期預報趨勢：${level.label}（${score}分）">${level.label}</span>
+              <span class="slot ${level.cls}" data-detail="${jsonStr}" title="點擊查看詳情">${level.label}</span>
             </div>
             <span class="tag tag-seasonal">🔮 長期預報</span>
           `;
           td.appendChild(box);
-          td.title = `${loc.name}｜${dateStr}${isPlan ? '（⭐ 行程）' : ''}\n🔮 長期預報（趨勢參考）\n${text} · ${maxT}° / ${minT}°C\n降水量 ${precip} mm`;
+          td.title = `${loc.name}｜${dateStr}${isPlan ? '（⭐ 行程）' : ''}\n🔮 長期預報\n${text} · ${maxT}° / ${minT}°C\n降水量 ${precip} mm`;
           tr.appendChild(td);
           return;
         }
       }
 
-      /* ====== 3. 歷史估計 ====== */
+      /* ====== 歷史估計 ====== */
       const pending = document.createElement('span');
       pending.className = 'pending';
       pending.innerHTML = '🔄<small>查詢中…</small>';
@@ -1006,14 +1392,12 @@ function renderTable(weatherData, seasonalData) {
           box.innerHTML = `
             <span class="wicon" title="${text}">${icon}</span>
             <span class="temp">${avg.max}° / ${avg.min}°</span>
-            <div class="slots">${buildSlotHTML(avg.slots)}</div>
+            <div class="slots">${buildSlotHTML(avg.slots, loc, dateStr, sunrise, sunset, `📊 過去三年（${avg.years.join('、')}）同日平均`)}</div>
             <div class="sun">🌅${sunrise} 🌇${sunset}</div>
             <span class="tag tag-estimate">📊 估計</span>
           `;
           currentTd.appendChild(box);
-          currentTd.title =
-            `${loc.name}｜${dateStr}${planFlag ? '（⭐ 行程）' : ''}\n` +
-            `📊 過去三年同日平均\n${text} · ${avg.max}° / ${avg.min}°C\n平均降水量 ${avg.rain} mm`;
+          currentTd.title = `${loc.name}｜${dateStr}${planFlag ? '（⭐ 行程）' : ''}\n📊 過去三年同日平均\n${text} · ${avg.max}° / ${avg.min}°C`;
         } else {
           currentTd.querySelectorAll('.pending').forEach(el => el.remove());
           const errSpan = document.createElement('span');
@@ -1026,10 +1410,26 @@ function renderTable(weatherData, seasonalData) {
 
     tbody.appendChild(tr);
   });
+
+  bindSlotClicks(tbody);
+}
+
+function bindSlotClicks(container) {
+  container.addEventListener('click', e => {
+    const slot = e.target.closest('.slot[data-detail]');
+    if (!slot) return;
+    try {
+      const json = decodeURIComponent(slot.getAttribute('data-detail'));
+      const data = JSON.parse(json);
+      openDetail(data);
+    } catch (err) {
+      console.error('解析詳情失敗', err);
+    }
+  });
 }
 
 /* =========================================================
-   9. 啟動
+   10. 啟動
    ========================================================= */
 fetchAllWeather();
 btn.addEventListener('click', fetchAllWeather);
