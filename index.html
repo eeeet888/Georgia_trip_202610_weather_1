@@ -121,13 +121,10 @@
       display: inline-block;
       border: 1px solid rgba(0,0,0,.08);
     }
-    /* 蓝天降雪的图例色块 */
     .legend-bar i.sky-demo {
       position: relative;
       background: #c8e6c9;
       box-shadow: 0 0 0 2px var(--sky);
-      width: 14px; height: 14px;
-      border-radius: 4px;
     }
     .legend-bar i.sky-demo::after {
       content: '';
@@ -165,6 +162,11 @@
       color: #1565c0;
       font-weight: 700;
     }
+    .deduct-line .d.ico {
+      font-size: 0.95em;
+      color: #455a64;
+      font-weight: 600;
+    }
 
     .hint-line {
       text-align: center;
@@ -187,7 +189,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 980px;
+      min-width: 1000px;
       font-size: 0.88em;
     }
     th, td {
@@ -267,14 +269,16 @@
       gap: 4px;
       margin-top: 4px;
     }
+    /* 時段格子：上下堆疊圖示+標籤 */
     .slot {
-      font-size: 0.72em;
-      font-weight: 700;
-      width: 24px;
-      height: 24px;
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 1px;
+      width: 28px;
+      height: 34px;
+      padding: 3px 0;
       border-radius: 6px;
       line-height: 1;
       cursor: pointer;
@@ -284,8 +288,19 @@
       -webkit-tap-highlight-color: transparent;
       position: relative;
     }
-    .slot:hover { transform: scale(1.15); }
+    .slot:hover { transform: scale(1.08); }
     .slot:active { transform: scale(0.95); }
+
+    .slot-icon {
+      font-size: 0.88em;
+      line-height: 1;
+    }
+    .slot-label {
+      font-size: 0.6em;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0;
+    }
 
     /* ===== 6 級適宜度色系 ===== */
     .lv-excellent { background: #a5d6a7; color: #1b5e20; border-color: #81c784; }
@@ -304,8 +319,8 @@
       position: absolute;
       top: -3px;
       right: -3px;
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: linear-gradient(180deg, #bbdefb 0%, #42a5f5 100%);
       border: 1.5px solid #fff;
@@ -318,7 +333,7 @@
       font-size: 0.68em;
       color: #90a4ae;
       white-space: nowrap;
-      margin-top: 2px;
+      margin-top: 3px;
       letter-spacing: 0.2px;
     }
 
@@ -506,7 +521,9 @@
       body { padding: 12px 8px; }
       h1 { font-size: 1.15em; }
       th, td { padding: 7px 4px; }
-      .slot { width: 22px; height: 22px; font-size: 0.68em; }
+      .slot { width: 26px; height: 32px; }
+      .slot-icon { font-size: 0.8em; }
+      .slot-label { font-size: 0.55em; }
       .legend-bar { font-size: 0.7em; gap: 7px; }
       .deduct-line { font-size: 0.7em; }
       .hint-line { font-size: 0.7em; }
@@ -553,18 +570,27 @@
       <span>⭐ 行程目的地</span>
     </div>
     <div class="deduct-line">
+      <b>圖示</b>：
+      <span class="d ico">☀️ 晴朗</span>
+      <span class="d ico">⛅ 多雲</span>
+      <span class="d ico">☁️ 陰天</span>
+      <span class="d ico">🌧️ 降雨</span>
+      <span class="d ico">❄️ 降雪</span>
+      <span class="d ico">⛈️ 雷暴</span>
+      <span class="d ico">🌫️ 有霧</span>
+    </div>
+    <div class="deduct-line" style="border-top:none;padding-top:4px;">
       <b>扣分因素</b>：
       <span class="d">⛈️ 雷暴 -75</span>
       <span class="d">❄️ 陰天降雪 -50～60</span>
       <span class="d">🌧️ 降雨 -45～55</span>
-      <span class="d">🌦️ 陣雨 -35～55</span>
       <span class="d">💧 雨量 &gt;8mm -25</span>
       <span class="d">☔ 高機率 &gt;85% -18</span>
       <span class="d">💨 強風 &gt;55km/h -25</span>
       <span class="d good">🌤️ 過冷過熱不扣分</span>
       <span class="d sky">🔵 藍天降雪（藍框）不扣分</span>
     </div>
-    <div class="hint-line">👆 點擊色塊查看詳細分數與原因</div>
+    <div class="hint-line">👆 點擊色塊查看詳細分數與原因 · 時段：早 08–12、午 12–18、晚 18–21</div>
   </div>
 
   <div class="table-wrapper">
@@ -589,7 +615,7 @@
 
   <footer>
     資料來源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
-    時段：早 06–12、午 12–18、晚 18–24<br>
+    時段：早 08–12、午 12–18、晚 18–21<br>
     超過 16 天：優先顯示「長期預報」，若無資料則以「估計」顯示過去三年同日平均值
   </footer>
 </div>
@@ -659,10 +685,11 @@ const itinerary = {
 const FORECAST_DAYS = 16;
 const SEASONAL_DAYS = 46;
 
+// ★ 時段：只計算 08:00–21:00
 const TIME_SLOTS = [
-  { id: 'morning',   label: '早', start: 6,  end: 12 },
+  { id: 'morning',   label: '早', start: 8,  end: 12 },
   { id: 'afternoon', label: '午', start: 12, end: 18 },
-  { id: 'evening',   label: '晚', start: 18, end: 24 }
+  { id: 'evening',   label: '晚', start: 18, end: 21 }
 ];
 
 const CLEAR_SKY_CLOUD_THRESHOLD = 60;
@@ -770,6 +797,52 @@ function scoreOutdoor(hourData) {
   };
 }
 
+/* =========================================================
+   ★ 依時段的小時天氣代碼，判斷該時段的代表天氣圖示
+   ========================================================= */
+function getSlotWeather(hourly, indices) {
+  if (!indices || indices.length === 0) return { icon: '—', text: '', category: 'none' };
+
+  const counts = { thunder: 0, snow: 0, rain: 0, fog: 0, overcast: 0, cloudy: 0, clear: 0 };
+
+  indices.forEach(i => {
+    const code = hourly.weather_code?.[i];
+    if (typeof code !== 'number') return;
+    if (code >= 95) counts.thunder++;
+    else if (isSnowCode(code)) counts.snow++;
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) counts.rain++;
+    else if (code === 45 || code === 48) counts.fog++;
+    else if (code === 3) counts.overcast++;
+    else if (code === 2) counts.cloudy++;
+    else if (code === 0 || code === 1) counts.clear++;
+  });
+
+  // 依嚴重程度排序，平手時嚴重的優先
+  const priorityOrder = ['thunder', 'snow', 'rain', 'fog', 'overcast', 'cloudy', 'clear'];
+  const meta = {
+    thunder:  { icon: '⛈️', text: '雷暴' },
+    snow:     { icon: '❄️', text: '降雪' },
+    rain:     { icon: '🌧️', text: '降雨' },
+    fog:      { icon: '🌫️', text: '有霧' },
+    overcast: { icon: '☁️', text: '陰天' },
+    cloudy:   { icon: '⛅', text: '多雲' },
+    clear:    { icon: '☀️', text: '晴朗' }
+  };
+
+  let maxCat = 'clear', maxCount = 0;
+  priorityOrder.forEach(cat => {
+    if (counts[cat] > maxCount) {
+      maxCount = counts[cat];
+      maxCat = cat;
+    }
+  });
+
+  return { icon: meta[maxCat].icon, text: meta[maxCat].text, category: maxCat };
+}
+
+/* =========================================================
+   3. 分析每日各時段
+   ========================================================= */
 function analyzeDaySlots(hourly, dateStr, hasProb) {
   if (!hourly || !Array.isArray(hourly.time)) return null;
 
@@ -792,7 +865,9 @@ function analyzeDaySlots(hourly, dateStr, hasProb) {
       avgProb: null,
       maxWind: null,
       mainCode: null,
-      hasClearSkySnow: false
+      hasClearSkySnow: false,
+      icon: '—',
+      weatherText: ''
     };
 
     if (indices.length === 0) return emptyReturn;
@@ -822,7 +897,6 @@ function analyzeDaySlots(hourly, dateStr, hasProb) {
         totalScore += result.score;
         result.reasons.forEach(r => reasonSet.add(r));
 
-        // 統計降雪與藍天降雪
         if (isSnowCode(code)) {
           snowHourCount++;
           if (result.clearSkySnow) clearSkySnowHourCount++;
@@ -840,8 +914,10 @@ function analyzeDaySlots(hourly, dateStr, hasProb) {
 
     const avgScore = Math.round(totalScore / indices.length);
     const mainCode = Object.keys(codeCount).sort((a,b) => codeCount[b] - codeCount[a])[0];
-    // 多數小時為藍天降雪 → 標記為藍天降雪時段
     const hasClearSkySnow = snowHourCount > 0 && clearSkySnowHourCount >= Math.ceil(snowHourCount / 2);
+
+    // ★ 該時段的代表天氣圖示
+    const slotWeather = getSlotWeather(hourly, indices);
 
     return {
       ...slot,
@@ -853,13 +929,15 @@ function analyzeDaySlots(hourly, dateStr, hasProb) {
       avgProb: probCount > 0 ? Math.round(totalProb / probCount) : null,
       maxWind: maxWind > 0 ? Math.round(maxWind) : null,
       mainCode: mainCode !== undefined ? parseInt(mainCode, 10) : null,
-      hasClearSkySnow
+      hasClearSkySnow,
+      icon: slotWeather.icon,
+      weatherText: slotWeather.text
     };
   });
 }
 
 /* =========================================================
-   3. 工具函式
+   4. 工具函式
    ========================================================= */
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -875,7 +953,7 @@ function getWeatherIcon(code) {
   if (code >= 66 && code <= 67) return "🌧️";
   if (code >= 71 && code <= 77) return "❄️";
   if (code >= 80 && code <= 82) return "🌦️";
-  if (code >= 85 && code <= 86) return "🌨️";
+  if (code >= 85 && code <= 86) return "❄️";
   if (code === 95) return "⛈️";
   if (code >= 96) return "⛈️";
   return "☁️";
@@ -939,7 +1017,7 @@ function isPlanFor(dateStr, locId) {
 }
 
 /* =========================================================
-   4. 詳情面板
+   5. 詳情面板
    ========================================================= */
 const modal         = document.getElementById('detailModal');
 const modalClose    = document.getElementById('modalClose');
@@ -953,7 +1031,7 @@ const modalNote     = document.getElementById('modalNote');
 
 function openDetail(data) {
   modalTitle.textContent = `${data.locName} · ${data.dateLabel}`;
-  modalSub.textContent = `${data.slotLabel}（${data.timeRange}）`;
+  modalSub.textContent = `${data.slotLabel}（${data.timeRange}） ${data.icon || ''} ${data.weatherText || ''}`;
 
   modalScore.textContent = data.score;
   modalScore.style.color = data.level.color;
@@ -978,11 +1056,11 @@ function openDetail(data) {
   }
 
   const details = [];
+  if (data.icon) details.push(['代表天氣', `${data.icon} ${data.weatherText || ''}`]);
   if (data.avgTemp !== null) details.push(['平均溫度', `${data.avgTemp}°C`]);
   if (data.totalPrecip !== null) details.push(['降水量', `${data.totalPrecip} mm`]);
   if (data.avgProb !== null) details.push(['降雨機率', `${data.avgProb}%`]);
   if (data.maxWind !== null) details.push(['最大風速', `${data.maxWind} km/h`]);
-  if (data.mainCode !== null) details.push(['主要天氣', `${getWeatherIcon(data.mainCode)} ${getWeatherText(data.mainCode)}`]);
   if (data.sunrise) details.push(['日出', data.sunrise]);
   if (data.sunset) details.push(['日落', data.sunset]);
 
@@ -1010,7 +1088,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* =========================================================
-   5. 狀態列 / 按鈕
+   6. 狀態列 / 按鈕
    ========================================================= */
 const btn           = document.getElementById('refreshBtn');
 const btnIcon       = document.getElementById('btnIcon');
@@ -1031,7 +1109,7 @@ function setLoading(on) {
 }
 
 /* =========================================================
-   6. 季節預報
+   7. 季節預報
    ========================================================= */
 async function fetchSeasonalForecast(loc) {
   const cacheKey = `${loc.id}_seasonal`;
@@ -1056,7 +1134,7 @@ async function fetchSeasonalForecast(loc) {
 }
 
 /* =========================================================
-   7. 歷史平均值
+   8. 歷史平均值
    ========================================================= */
 async function fetchHistoricalAverage(loc, dateStr) {
   const cacheKey = `${loc.id}_${dateStr}`;
@@ -1112,9 +1190,28 @@ async function fetchHistoricalAverage(loc, dateStr) {
     const precipVals = yearSlots.map(sl => sl.totalPrecip).filter(v => v !== null);
     const windVals = yearSlots.map(sl => sl.maxWind).filter(v => v !== null);
 
-    // 三年中有過半數年份該時段是藍天降雪 → 標記為藍天降雪
+    // 三年中過半數年份為藍天降雪 → 標記
     const clearSkyCount = yearSlots.filter(sl => sl.hasClearSkySnow).length;
     const hasClearSkySnow = yearSlots.length > 0 && clearSkyCount >= Math.ceil(yearSlots.length / 2);
+
+    // ★ 圖示：取多數年份的圖示
+    const iconCounts = {};
+    yearSlots.forEach(sl => {
+      if (sl.icon && sl.icon !== '—') {
+        iconCounts[sl.icon] = (iconCounts[sl.icon] || 0) + 1;
+      }
+    });
+    let bestIcon = '—', bestText = '', bestCount = 0;
+    Object.keys(iconCounts).forEach(icon => {
+      if (iconCounts[icon] > bestCount) {
+        bestCount = iconCounts[icon];
+        bestIcon = icon;
+      }
+    });
+    // 取得對應文字
+    yearSlots.forEach(sl => {
+      if (sl.icon === bestIcon && !bestText) bestText = sl.weatherText;
+    });
 
     return {
       ...slot,
@@ -1126,7 +1223,9 @@ async function fetchHistoricalAverage(loc, dateStr) {
       avgProb: null,
       maxWind: windVals.length ? Math.round(windVals.reduce((a,b)=>a+b,0)/windVals.length) : null,
       mainCode: yearData[0].code,
-      hasClearSkySnow
+      hasClearSkySnow,
+      icon: bestIcon,
+      weatherText: bestText
     };
   });
 
@@ -1147,7 +1246,7 @@ async function fetchHistoricalAverage(loc, dateStr) {
 }
 
 /* =========================================================
-   8. 抓取資料
+   9. 抓取資料
    ========================================================= */
 let isFetching = false;
 
@@ -1216,7 +1315,7 @@ async function fetchAllWeather() {
 }
 
 /* =========================================================
-   9. 渲染表格
+   10. 渲染表格
    ========================================================= */
 function buildSlotHTML(slots, loc, dateStr, sunrise, sunset, note) {
   return slots.map(s => {
@@ -1233,14 +1332,19 @@ function buildSlotHTML(slots, loc, dateStr, sunrise, sunset, note) {
       avgProb: s.avgProb,
       maxWind: s.maxWind,
       mainCode: s.mainCode,
+      icon: s.icon,
+      weatherText: s.weatherText,
       sunrise, sunset,
       note
     };
     const jsonStr = encodeURIComponent(JSON.stringify(detailData));
     const clearSkyClass = s.hasClearSkySnow ? ' has-clearsky' : '';
     const clearSkyTip = s.hasClearSkySnow ? ' 🔵藍天降雪' : '';
-    const tip = `${s.label}：${s.level.label}（${s.score}分）${s.reasons.length ? '｜' + s.reasons.join('、') : ''}${clearSkyTip}`;
-    return `<span class="slot ${s.level.cls}${clearSkyClass}" data-detail="${jsonStr}" title="${tip}">${s.label}</span>`;
+    const tip = `${s.label}：${s.level.label}（${s.score}分）｜${s.icon}${s.weatherText}${s.reasons.length ? '｜' + s.reasons.join('、') : ''}${clearSkyTip}`;
+    return `<div class="slot ${s.level.cls}${clearSkyClass}" data-detail="${jsonStr}" title="${tip}">
+      <span class="slot-icon">${s.icon}</span>
+      <span class="slot-label">${s.label}</span>
+    </div>`;
   }).join('');
 }
 
@@ -1346,6 +1450,8 @@ function renderTable(weatherData, seasonalData) {
             avgProb: null,
             maxWind: null,
             mainCode: code,
+            icon: icon,
+            weatherText: text,
             sunrise: null, sunset: null,
             note: '🔮 此為長期預報（EC46 模型），趨勢僅供參考'
           };
@@ -1357,7 +1463,10 @@ function renderTable(weatherData, seasonalData) {
             <span class="wicon" title="${text}">${icon}</span>
             <span class="temp">${maxT}° / ${minT}°</span>
             <div class="slots">
-              <span class="slot ${level.cls}" data-detail="${jsonStr}" title="點擊查看詳情">${level.label}</span>
+              <div class="slot ${level.cls}" data-detail="${jsonStr}" title="點擊查看詳情">
+                <span class="slot-icon">${icon}</span>
+                <span class="slot-label">全天</span>
+              </div>
             </div>
             <span class="tag tag-seasonal">🔮 長期預報</span>
           `;
@@ -1429,7 +1538,7 @@ function bindSlotClicks(container) {
 }
 
 /* =========================================================
-   10. 啟動
+   11. 啟動
    ========================================================= */
 fetchAllWeather();
 btn.addEventListener('click', fetchAllWeather);
